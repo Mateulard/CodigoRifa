@@ -1,0 +1,67 @@
+body {
+  background-color: #f8f9fa; /* Fondo más suave para reducir el impacto visual */
+  color: #333;
+  font-family: 'Arial', sans-serif;
+}
+
+.card {
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  border-radius: 10px;
+  background-color: #fff;
+}
+
+.card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+}
+
+.card-title {
+  font-size: 1.25rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.card-title::before {
+  content: "🎯 "; /* Emoji guía */
+  margin-right: 0.5rem;
+}
+
+.card-text {
+  font-size: 0.95rem;
+  color: #666;
+}
+
+.btn-primary {
+  background-color: #007bff;
+  border-color: #007bff;
+  border-radius: 25px;
+  padding: 0.5rem 1rem;
+  font-size: 1rem;
+}
+
+.btn-primary:hover {
+  background-color: #0056b3;
+  border-color: #004085;
+}
+
+h1 {
+  font-size: 2.5rem;
+  color: #007bff;
+}
+
+.container {
+  max-width: 1200px;
+  padding: 1rem;
+  margin: auto;
+}
+
+@media (max-width: 768px) {
+  .card {
+    margin-bottom: 1rem;
+  }
+  h1 {
+    font-size: 2rem;
+  }
+}
