@@ -80,15 +80,14 @@ app.post("/guardarPremios", (req, res) => {
   });
 });
 
-// Create a new raffle
 app.post('/crearRifa', (req, res) => {
   console.log('Received request to create raffle:', req.body);
-  const { nombre, organizacion_id, rangoInicio, rangoFin, crearBonos, cantidadBonos, cuotas, valorCuota, mesInicio } = req.body;
+  const { nombre, organizacion_id, rangoInicio, rangoFin, crearBonos, cantidadBonos, cuotas, valorCuota, mesInicio, tiposPremios } = req.body;
   const numeros = rangoFin - rangoInicio + 1;
-  const sql = `INSERT INTO rifas (nombre, organizacion_id, numeros, crearBonos, cantidadBonos, cuotas, valorCuota, mesInicio, rangoInicio, rangoFin) 
-               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
+  const sql = `INSERT INTO rifas (nombre, organizacion_id, numeros, crearBonos, cantidadBonos, cuotas, valorCuota, mesInicio, rangoInicio, rangoFin, tiposPremios) 
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
   
-  db.query(sql, [nombre, organizacion_id, numeros, crearBonos, cantidadBonos, Math.min(12, cuotas), valorCuota, mesInicio, rangoInicio, rangoFin], (err, result) => {
+  db.query(sql, [nombre, organizacion_id, numeros, crearBonos, cantidadBonos, Math.min(12, cuotas), valorCuota, mesInicio, rangoInicio, rangoFin, JSON.stringify(tiposPremios)], (err, result) => {
     if (err) {
       console.error('Error inserting into rifas table:', err);
       return res.status(500).json({error: err.message, sqlMessage: err.sqlMessage});
@@ -113,7 +112,6 @@ app.post('/crearRifa', (req, res) => {
   });
 });
 
-// Get all raffles
 app.get('/rifas', (req, res) => {
   const sql = 'SELECT r.*, o.nombre as organizacion_nombre FROM rifas r LEFT JOIN organizaciones o ON r.organizacion_id = o.id';
   db.query(sql, (err, data) => {
@@ -173,7 +171,6 @@ app.post('/actualizarCuotaPagada', (req, res) => {
         return res.status(500).json({ error: 'Error parsing cuotas_pagadas', details: parseError.message });
       }
     }
-
     if (!estado) {
       Object.keys(cuotasPagadas).forEach(key => {
         if (Number(key) > cuotaIndex) {
@@ -181,7 +178,6 @@ app.post('/actualizarCuotaPagada', (req, res) => {
         }
       });
     }
-
     cuotasPagadas[cuotaIndex] = estado;
 
     const updateSql = 'UPDATE numeros_rifa SET cuotas_pagadas = ? WHERE id = ?';
@@ -254,21 +250,27 @@ app.get('/vendedoresPorOrganizacion/:organizacionId', (req, res) => {
   });
 });
 
-// Get raffle numbers by collector
+// Modificar este endpoint para incluir el método de pago en la respuesta
 app.get('/numerosRifaPorCobrador/:rifaId/:cobradorId', (req, res) => {
   const { rifaId, cobradorId } = req.params;
+  console.log(`Buscando números de rifa para la rifa ${rifaId} y cobrador ${cobradorId}`);
+
   const sql = `
-    SELECT nr.id, nr.numero, nr.cuotas_pagadas, v.nombre as vendedor_nombre
+    SELECT nr.id, nr.numero, nr.cuotas_pagadas, nr.metodo_pago, v.nombre as vendedor_nombre
     FROM numeros_rifa nr
     LEFT JOIN vendedores v ON nr.vendedor_id = v.id
     WHERE nr.rifa_id = ? AND nr.cobrador_id = ?
     ORDER BY nr.numero
   `;
-  
+
   db.query(sql, [rifaId, cobradorId], (err, data) => {
     if (err) {
-      console.error('Error getting raffle numbers for collector:', err);
-      return res.status(500).json({ error: 'Error getting raffle numbers', details: err.message });
+      console.error("Error buscando números de rifa:", err);
+      return res.status(500).json({ error: 'Error del servidor', details: err.message });
+    }
+    console.log("Números de rifa encontrados:", data.length);
+    if (data.length === 0) {
+      console.log("No se encontraron números de rifa para esta combinación de rifa y cobrador");
     }
     return res.json(data);
   });
@@ -551,18 +553,13 @@ app.delete('/organizaciones/:id', (req, res) => {
   });
 });
 
-// Get raffle numbers by vendor and raffle
+// Modificar este endpoint para incluir el método de pago en la respuesta
 app.get('/numerosRifaPorVendedor/:rifaId/:vendedorId', (req, res) => {
   const { rifaId, vendedorId } = req.params;
-  console.log(`Searching for raffle numbers for raffle ${rifaId} and vendor ${vendedorId}`);
-
-  if (!rifaId || !vendedorId) {
-    console.error("Missing rifaId or vendedorId parameters");
-    return res.status(400).json({ error: 'Missing required parameters' });
-  }
+  console.log(`Buscando números de rifa para la rifa ${rifaId} y vendedor ${vendedorId}`);
 
   const sql = `
-    SELECT nr.id, nr.numero, nr.cuotas_pagadas
+    SELECT nr.id, nr.numero, nr.cuotas_pagadas, nr.metodo_pago
     FROM numeros_rifa nr
     WHERE nr.rifa_id = ? AND nr.vendedor_id = ?
     ORDER BY nr.numero
@@ -570,16 +567,209 @@ app.get('/numerosRifaPorVendedor/:rifaId/:vendedorId', (req, res) => {
 
   db.query(sql, [rifaId, vendedorId], (err, data) => {
     if (err) {
-      console.error("Error searching for raffle numbers:", err);
-      return res.status(500).json({ error: 'Server error', details: err.message });
+      console.error("Error buscando números de rifa:", err);
+      return res.status(500).json({ error: 'Error del servidor', details: err.message });
     }
-    console.log("Raffle numbers found:", data.length);
+    console.log("Números de rifa encontrados:", data.length);
     if (data.length === 0) {
-      console.log("No raffle numbers found for this combination of raffle and vendor");
+      console.log("No se encontraron números de rifa para esta combinación de rifa y vendedor");
     }
     return res.json(data);
   });
 });
+
+// Update raffle number information
+app.put('/actualizarNumeroRifa/:id', (req, res) => {
+  const { id } = req.params;
+  const { 
+    nombre_comprador,
+    fecha_suscripcion,
+    direccion,
+    barrio,
+    localidad,
+    telefono,
+    fecha_cobro,
+    mail
+  } = req.body;
+
+  const sql = `
+    UPDATE numeros_rifa 
+    SET 
+      nombre_comprador = ?,
+      fecha_suscripcion = ?,
+      direccion = ?,
+      barrio = ?,
+      localidad = ?,
+      telefono = ?,
+      fecha_cobro = ?,
+      mail = ?
+    WHERE id = ?
+  `;
+
+  db.query(
+    sql, 
+    [nombre_comprador, fecha_suscripcion, direccion, barrio, localidad, telefono, fecha_cobro, mail, id],
+    (err, result) => {
+      if (err) {
+        console.error('Error updating raffle number:', err);
+        return res.status(500).json({ error: 'Error updating raffle number', details: err.message });
+      }
+      return res.json({ message: 'Raffle number updated successfully' });
+    }
+  );
+});
+
+app.post('/consignarCuota', (req, res) => {
+  const { numeroRifaId, cuotaIndex } = req.body;
+  
+  const selectSql = 'SELECT cuotas_pagadas FROM numeros_rifa WHERE id = ?';
+  db.query(selectSql, [numeroRifaId], (selectErr, selectResult) => {
+    if (selectErr) {
+      console.error('Error selecting cuotas_pagadas:', selectErr);
+      return res.status(500).json({ error: 'Error selecting cuotas_pagadas', details: selectErr.message });
+    }
+
+    let cuotasPagadas = {};
+    if (selectResult[0] && selectResult[0].cuotas_pagadas) {
+      try {
+        cuotasPagadas = JSON.parse(selectResult[0].cuotas_pagadas);
+      } catch (parseError) {
+        console.error('Error parsing cuotas_pagadas:', parseError);
+        return res.status(500).json({ error: 'Error parsing cuotas_pagadas', details: parseError.message });
+      }
+    }
+
+    cuotasPagadas[cuotaIndex] = true;
+
+    const updateSql = 'UPDATE numeros_rifa SET cuotas_pagadas = ? WHERE id = ?';
+    db.query(updateSql, [JSON.stringify(cuotasPagadas), numeroRifaId], (updateErr, updateResult) => {
+      if (updateErr) {
+        console.error('Error updating cuotas_pagadas:', updateErr);
+        return res.status(500).json({ error: 'Error updating cuotas_pagadas', details: updateErr.message });
+      }
+      return res.status(200).json({ message: 'Cuota consignada exitosamente', cuotasPagadas });
+    });
+  });
+});
+
+// Delete a raffle
+app.delete('/eliminarRifa/:id', (req, res) => {
+  const { id } = req.params;
+  
+  // First, delete all associated raffle numbers
+  const deleteNumbersSql = 'DELETE FROM numeros_rifa WHERE rifa_id = ?';
+  db.query(deleteNumbersSql, [id], (err, result) => {
+    if (err) {
+      console.error('Error deleting raffle numbers:', err);
+      return res.status(500).json({ error: 'Error deleting raffle numbers', details: err.message });
+    }
+    
+    // Then, delete the raffle itself
+    const deleteRaffaSql = 'DELETE FROM rifas WHERE id = ?';
+    db.query(deleteRaffaSql, [id], (err, result) => {
+      if (err) {
+        console.error('Error deleting raffle:', err);
+        return res.status(500).json({ error: 'Error deleting raffle', details: err.message });
+      }
+      return res.json({ message: 'Raffle and associated numbers deleted successfully' });
+    });
+  });
+});
+
+
+app.post('/actualizarMetodoPago', (req, res) => {
+  const { numeroRifaId, metodoPago } = req.body;
+  
+  if (!numeroRifaId || metodoPago === undefined) {
+    console.error('Faltan parámetros requeridos para actualizarMetodoPago');
+    return res.status(400).json({ success: false, message: 'Faltan parámetros requeridos.' });
+  }
+
+  const query = 'UPDATE numeros_rifa SET metodo_pago = ? WHERE id = ?';
+  db.query(query, [metodoPago, numeroRifaId], (err, result) => {
+    if (err) {
+      console.error('Error al actualizar método de pago:', err);
+      return res.status(500).json({ success: false, message: 'Error al actualizar método de pago.' });
+    }
+    
+    if (result.affectedRows === 0) {
+      console.warn(`No se encontró el número de rifa con ID ${numeroRifaId}`);
+      return res.status(404).json({ success: false, message: 'Número de rifa no encontrado.' });
+    }
+
+    console.log(`Método de pago actualizado para el número de rifa ${numeroRifaId}`);
+    res.json({ success: true, message: 'Método de pago actualizado con éxito.' });
+  });
+});
+// Get raffle details
+app.get('/detallesRifa/:rifaId', (req, res) => {
+  const { rifaId } = req.params;
+  const sql = `
+    SELECT r.*, o.nombre as organizacion_nombre FROM rifas r LEFT JOIN organizaciones o ON r.organizacion_id = o.id WHERE r.id = ?`;
+
+  db.query(sql, [rifaId], (err, result) => {
+    if (err) {
+      console.error('Error fetching raffle details:', err);
+      return res.status(500).json({ error: 'Error fetching raffle details', details: err.message });
+    }
+    if (result.length === 0) {
+      return res.status(404).json({ error: 'Raffle not found' });
+    }
+    const raffle = result[0];
+    if (raffle.tiposPremios) {
+      try {
+        raffle.tiposPremios = JSON.parse(raffle.tiposPremios);
+      } catch (parseError) {
+        console.error('Error parsing tiposPremios:', parseError);
+        raffle.tiposPremios = {};
+      }
+    }
+    return res.json(raffle);
+  });
+});
+// Modificar este endpoint para devolver los métodos de pago
+app.get('/metodosPago/:rifaId', (req, res) => {
+  const { rifaId } = req.params;
+  console.log(`Obteniendo métodos de pago para la rifa ID: ${rifaId}`);
+  const sql = `
+    SELECT DISTINCT metodo_pago
+    FROM numeros_rifa
+    WHERE rifa_id = ? AND metodo_pago IS NOT NULL AND metodo_pago != ''
+  `;
+  
+  db.query(sql, [rifaId], (err, result) => {
+    if (err) {
+      console.error('Error al obtener métodos de pago:', err);
+      return res.status(500).json({ error: 'Error al obtener métodos de pago', details: err.message });
+    }
+    const metodosPago = result.map(row => row.metodo_pago);
+    console.log(`Métodos de pago encontrados:`, metodosPago);
+    return res.json(metodosPago);
+  });
+});
+// Search for a winner by raffle number
+app.get('/buscarGanador/:rifaId/:numero', (req, res) => {
+  const { rifaId, numero } = req.params;
+  const sql = `
+    SELECT nr.*, v.nombre as vendedor_nombre, c.nombre as cobrador_nombre
+    FROM numeros_rifa nr 
+    LEFT JOIN vendedores v ON nr.vendedor_id = v.id 
+    LEFT JOIN cobradores c ON nr.cobrador_id = c.id
+    WHERE nr.rifa_id = ? AND nr.numero = ?
+  `;
+  
+  db.query(sql, [rifaId, numero], (err, result) => {
+    if (err) {
+      console.error('Error searching for winner:', err);
+      return res.status(500).json({ error: 'Error searching for winner', details: err.message });
+    }
+    if (result.length === 0) {
+      return res.status(404).json({ error: 'Number not found' });
+    }
+    return res.json(result[0]);
+  });
+});
+
 
 app.use(errorHandler);
 
@@ -587,3 +777,4 @@ app.use(errorHandler);
 app.listen(4000, () => {
   console.log("Server running on port 4000");
 });
+

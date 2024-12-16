@@ -1,204 +1,99 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 
-const meses = ['ENE', 'FEB', 'MAR', 'ABR', 'MAY', 'JUN', 'JUL', 'AGO', 'SEP', 'OCT', 'NOV', 'DIC'];
-
 export default function VerRifas() {
   const [rifas, setRifas] = useState([]);
   const [selectedRifa, setSelectedRifa] = useState(null);
   const [numerosRifa, setNumerosRifa] = useState([]);
-  const [vendedores, setVendedores] = useState([]);
-  const [cobradores, setCobradores] = useState([]);
-  const [message, setMessage] = useState('');
-  const [rangoInicio, setRangoInicio] = useState('');
-  const [rangoFin, setRangoFin] = useState('');
-  const [vendedorRango, setVendedorRango] = useState('');
-  const [cobradorRango, setCobradorRango] = useState('');
-  const [tipoAsignacion, setTipoAsignacion] = useState('vendedor');
+  const [editingId, setEditingId] = useState(null);
+  const [editData, setEditData] = useState({});
 
   useEffect(() => {
     fetchRifas();
   }, []);
 
-  const fetchRifas = () => {
-    axios.get('http://localhost:4000/rifas').then((response) => {
+  const fetchRifas = async () => {
+    try {
+      const response = await axios.get("http://localhost:4000/rifas");
       setRifas(response.data);
-    });
-  };
-
-  const handleRifaSelect = (rifaId) => {
-    const selectedRifa = rifas.find(rifa => rifa.id === parseInt(rifaId));
-    setSelectedRifa(selectedRifa);
-    fetchNumerosRifa(selectedRifa.id);
-    fetchVendedores(selectedRifa.organizacion_id);
-    fetchCobradores(selectedRifa.organizacion_id);
-  };
-
-  const fetchNumerosRifa = (rifaId) => {
-    axios.get(`http://localhost:4000/numerosRifa/${rifaId}`).then((response) => {
-      setNumerosRifa(response.data);
-    });
-  };
-
-  const fetchVendedores = (organizacionId) => {
-    axios.get(`http://localhost:4000/vendedoresPorOrganizacion/${organizacionId}`).then((response) => {
-      setVendedores(response.data);
-    });
-  };
-
-  const fetchCobradores = (organizacionId) => {
-    axios.get(`http://localhost:4000/cobradoresPorOrganizacion/${organizacionId}`).then((response) => {
-      setCobradores(response.data);
-    });
-  };
-
-  const handleAsignarPersona = (numeroRifaId, personaId, tipo) => {
-    const endpoint = tipo === 'vendedor' ? 'actualizarVendedor' : 'actualizarCobrador';
-    axios.post(`http://localhost:4000/${endpoint}`, { numeroRifaId, [`${tipo}Id`]: personaId || null })
-      .then(() => {
-        setMessage(`Asignación de ${tipo} actualizada con éxito.`);
-        fetchNumerosRifa(selectedRifa.id); // Vuelve a cargar los números de rifa para reflejar los cambios
-      })
-      .catch((error) => {
-        console.error(`Error al actualizar asignación de ${tipo}:`, error);
-        setMessage(`Error al actualizar asignación de ${tipo}. Inténtalo nuevamente.`);
-      });
-  };
-
-  const handleMarcarCuotaPagada = (numeroRifaId, cuotaIndex) => {
-    const numero = numerosRifa.find(n => n.id === numeroRifaId);
-    let cuotasPagadas = {};
-    try {
-      cuotasPagadas = numero.cuotas_pagadas ? JSON.parse(numero.cuotas_pagadas) : {};
     } catch (error) {
-      console.error("Error parsing cuotas_pagadas:", error);
-      cuotasPagadas = {};
+      console.error("Error fetching rifas:", error);
     }
-    const nuevoEstado = !cuotasPagadas[cuotaIndex];
-
-    axios.post('http://localhost:4000/actualizarCuotaPagada', { numeroRifaId, cuotaIndex, estado: nuevoEstado })
-      .then((response) => {
-        setMessage("Estado de cuota actualizado con éxito.");
-        setNumerosRifa(numerosRifa.map(numero => 
-          numero.id === numeroRifaId 
-            ? { 
-                ...numero, 
-                cuotas_pagadas: JSON.stringify(response.data.cuotasPagadas)
-              }
-            : numero
-        ));
-      })
-      .catch((error) => {
-        console.error("Error al actualizar estado de cuota:", error);
-        if (error.response && error.response.status === 400) {
-          setMessage(error.response.data.error);
-        } else {
-          setMessage("Error al actualizar estado de cuota. Inténtalo nuevamente.");
-        }
-      });
   };
 
-  const handleAsignarPersonaRango = () => {
-    const endpoint = tipoAsignacion === 'vendedor' ? 'asignarVendedorRango' : 'asignarCobradorRango';
-    const personaId = tipoAsignacion === 'vendedor' ? vendedorRango : cobradorRango;
-    axios.post(`http://localhost:4000/${endpoint}`, {
-      rifaId: selectedRifa.id,
-      [`${tipoAsignacion}Id`]: personaId,
-      rangoInicio,
-      rangoFin
-    })
-      .then(() => {
-        setMessage(`${tipoAsignacion.charAt(0).toUpperCase() + tipoAsignacion.slice(1)} asignado al rango con éxito.`);
-        fetchNumerosRifa(selectedRifa.id);
-        setRangoInicio('');
-        setRangoFin('');
-        setVendedorRango('');
-        setCobradorRango('');
-      })
-      .catch((error) => {
-        console.error(`Error al asignar ${tipoAsignacion} al rango:`, error);
-        setMessage(`Error al asignar ${tipoAsignacion} al rango. Inténtalo nuevamente.`);
-      });
+  const handleRifaSelect = async (event) => {
+    const rifaId = event.target.value;
+    const selected = rifas.find((rifa) => rifa.id === parseInt(rifaId));
+    setSelectedRifa(selected || null);
+    if (selected) {
+      try {
+        const response = await axios.get(`http://localhost:4000/numerosRifa/${selected.id}`);
+        setNumerosRifa(response.data);
+      } catch (error) {
+        console.error("Error fetching numeros:", error);
+      }
+    }
   };
 
-  const calcularTotalPagado = (numero) => {
-    let cuotasPagadas = {};
+  const handleEdit = (numero) => {
+    setEditingId(numero.id);
+    setEditData(numero);
+  };
+
+  const handleSave = async () => {
+    if (!editingId) return;
+
     try {
-      cuotasPagadas = numero.cuotas_pagadas ? JSON.parse(numero.cuotas_pagadas) : {};
+      await axios.put(`http://localhost:4000/actualizarNumeroRifa/${editingId}`, editData);
+      const updatedNumeros = numerosRifa.map((numero) =>
+        numero.id === editingId ? { ...numero, ...editData } : numero
+      );
+      setNumerosRifa(updatedNumeros);
+      setEditingId(null);
+      setEditData({});
     } catch (error) {
-      console.error("Error parsing cuotas_pagadas:", error);
-      cuotasPagadas = {};
+      console.error("Error updating numero:", error);
     }
-    const cuotasPagadasCount = Object.values(cuotasPagadas).filter(Boolean).length;
-    return cuotasPagadasCount * (selectedRifa?.valorCuota || 0);
+  };
+
+  const handleCancel = () => {
+    setEditingId(null);
+    setEditData({});
+  };
+
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setEditData({ ...editData, [name]: value });
   };
 
   return (
-    <div className="container mt-5">
-      <h2>Rifas en Curso</h2>
-      <select className="form-control mb-3" onChange={(e) => handleRifaSelect(e.target.value)}>
+    <div className="ver-rifas-container">
+      <h2>Ver Rifas</h2>
+      <select onChange={handleRifaSelect} className="rifa-select">
         <option value="">Selecciona una rifa</option>
         {rifas.map((rifa) => (
-          <option key={rifa.id} value={rifa.id}>{rifa.nombre} - {rifa.organizacion_nombre}</option>
+          <option key={rifa.id} value={rifa.id}>
+            {rifa.nombre} - {rifa.organizacion_nombre}
+          </option>
         ))}
       </select>
+
       {selectedRifa && (
-        <div>
-          <h3>Asignar Persona a Rango de Números</h3>
-          <div className="form-row">
-            <div className="form-group col-md-2">
-              <select
-                className="form-control"
-                value={tipoAsignacion}
-                onChange={(e) => setTipoAsignacion(e.target.value)}
-              >
-                <option value="vendedor">Vendedor</option>
-                <option value="cobrador">Cobrador</option>
-              </select>
-            </div>
-            <div className="form-group col-md-2">
-              <input
-                type="number"
-                className="form-control"
-                placeholder="Rango inicio"
-                value={rangoInicio}
-                onChange={(e) => setRangoInicio(e.target.value)}
-              />
-            </div>
-            <div className="form-group col-md-2">
-              <input
-                type="number"
-                className="form-control"
-                placeholder="Rango fin"
-                value={rangoFin}
-                onChange={(e) => setRangoFin(e.target.value)}
-              />
-            </div>
-            <div className="form-group col-md-4">
-              <select
-                className="form-control"
-                value={tipoAsignacion === 'vendedor' ? vendedorRango : cobradorRango}
-                onChange={(e) => tipoAsignacion === 'vendedor' ? setVendedorRango(e.target.value) : setCobradorRango(e.target.value)}
-              >
-                <option value="">Seleccionar {tipoAsignacion}</option>
-                {(tipoAsignacion === 'vendedor' ? vendedores : cobradores).map((persona) => (
-                  <option key={persona.id} value={persona.id}>{persona.nombre}</option>
-                ))}
-              </select>
-            </div>
-            <div className="form-group col-md-2">
-              <button className="btn btn-primary" onClick={handleAsignarPersonaRango}>Asignar</button>
-            </div>
-          </div>
-          <h3>Números de la Rifa</h3>
-          <table className="table">
+        <div className="numeros-rifa-table-container">
+          <table className="numeros-rifa-table">
             <thead>
               <tr>
-                <th>Número</th>
-                <th>Vendedor</th>
-                <th>Cobrador</th>
-                <th>Cuotas Pagadas</th>
-                <th>Total Pagado</th>
+                <th>Nº</th>
+                <th>Fecha Suscripción</th>
+                <th>Apellido y Nombre</th>
+                <th>Dirección</th>
+                <th>Barrio</th>
+                <th>Localidad</th>
+                <th>Teléfono</th>
+                <th>Cobrar</th>
+                <th>Fecha Cobro</th>
+                <th>Mail</th>
+                <th>Acciones</th>
               </tr>
             </thead>
             <tbody>
@@ -206,58 +101,130 @@ export default function VerRifas() {
                 <tr key={numero.id}>
                   <td>{numero.numero}</td>
                   <td>
-                    <select
-                      className="form-control"
-                      value={numero.vendedor_id || ''}
-                      onChange={(e) => handleAsignarPersona(numero.id, e.target.value, 'vendedor')}
-                    >
-                      <option value="">Sin asignar</option>
-                      {vendedores.map((vendedor) => (
-                        <option key={vendedor.id} value={vendedor.id}>{vendedor.nombre}</option>
-                      ))}
-                    </select>
+                    {editingId === numero.id ? (
+                      <input
+                        type="date"
+                        name="fecha_suscripcion"
+                        value={editData.fecha_suscripcion || ""}
+                        onChange={handleInputChange}
+                      />
+                    ) : (
+                      numero.fecha_suscripcion
+                    )}
                   </td>
                   <td>
-                    <select
-                      className="form-control"
-                      value={numero.cobrador_id || ''}
-                      onChange={(e) => handleAsignarPersona(numero.id, e.target.value, 'cobrador')}
-                    >
-                      <option value="">Sin asignar</option>
-                      {cobradores.map((cobrador) => (
-                        <option key={cobrador.id} value={cobrador.id}>{cobrador.nombre}</option>
-                      ))}
-                    </select>
+                    {editingId === numero.id ? (
+                      <input
+                        type="text"
+                        name="nombre_comprador"
+                        value={editData.nombre_comprador || ""}
+                        onChange={handleInputChange}
+                      />
+                    ) : (
+                      numero.nombre_comprador
+                    )}
                   </td>
                   <td>
-                    {Array.from({ length: selectedRifa.cuotas }, (_, index) => {
-                      const mesIndex = (selectedRifa.mesInicio + index) % 12;
-                      let cuotasPagadas = {};
-                      try {
-                        cuotasPagadas = numero.cuotas_pagadas ? JSON.parse(numero.cuotas_pagadas) : {};
-                      } catch (error) {
-                        console.error("Error parsing cuotas_pagadas:", error);
-                      }
-                      return (
-                        <button
-                          key={index}
-                          className={`btn btn-sm ${cuotasPagadas[index] ? 'btn-success' : 'btn-outline-secondary'} mr-1 mb-1`}
-                          onClick={() => handleMarcarCuotaPagada(numero.id, index)}
-                          disabled={index > 0 && !cuotasPagadas[index - 1]}
-                        >
-                          {meses[mesIndex]}
-                        </button>
-                      );
-                    })}
+                    {editingId === numero.id ? (
+                      <input
+                        type="text"
+                        name="direccion"
+                        value={editData.direccion || ""}
+                        onChange={handleInputChange}
+                      />
+                    ) : (
+                      numero.direccion
+                    )}
                   </td>
-                  <td>${calcularTotalPagado(numero).toFixed(2)}</td>
+                  <td>
+                    {editingId === numero.id ? (
+                      <input
+                        type="text"
+                        name="barrio"
+                        value={editData.barrio || ""}
+                        onChange={handleInputChange}
+                      />
+                    ) : (
+                      numero.barrio
+                    )}
+                  </td>
+                  <td>
+                    {editingId === numero.id ? (
+                      <input
+                        type="text"
+                        name="localidad"
+                        value={editData.localidad || ""}
+                        onChange={handleInputChange}
+                      />
+                    ) : (
+                      numero.localidad
+                    )}
+                  </td>
+                  <td>
+                    {editingId === numero.id ? (
+                      <input
+                        type="text"
+                        name="telefono"
+                        value={editData.telefono || ""}
+                        onChange={handleInputChange}
+                      />
+                    ) : (
+                      numero.telefono
+                    )}
+                  </td>
+                  <td>
+                    {editingId === numero.id ? (
+                      <input
+                        type="text"
+                        name="cobrar"
+                        value={editData.cobrar || ""}
+                        onChange={handleInputChange}
+                      />
+                    ) : (
+                      numero.cobrar
+                    )}
+                  </td>
+                  <td>
+                    {editingId === numero.id ? (
+                      <input
+                        type="date"
+                        name="fecha_cobro"
+                        value={editData.fecha_cobro || ""}
+                        onChange={handleInputChange}
+                      />
+                    ) : (
+                      numero.fecha_cobro
+                    )}
+                  </td>
+                  <td>
+                    {editingId === numero.id ? (
+                      <input
+                        type="email"
+                        name="mail"
+                        value={editData.mail || ""}
+                        onChange={handleInputChange}
+                      />
+                    ) : (
+                      numero.mail
+                    )}
+                  </td>
+                  <td>
+                    {editingId === numero.id ? (
+                      <div>
+                        <button onClick={handleSave}>Guardar</button>
+                        <button onClick={handleCancel}>Cancelar</button>
+                      </div>
+                    ) : (
+                      <button onClick={() => handleEdit(numero)}>Editar</button>
+                    )}
+                  </td>
                 </tr>
               ))}
             </tbody>
           </table>
         </div>
       )}
-      {message && <p className="mt-3 alert alert-info">{message}</p>}
     </div>
   );
 }
+

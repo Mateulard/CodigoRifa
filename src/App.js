@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { BrowserRouter as Router, Route, Routes, Link, Navigate } from 'react-router-dom';
 import Comisiones from './components/Comisiones/Comisiones';
-import Cuotas from './components/Coutas/Cuotas';
+import RaffleManagement from './components/Coutas/RaffleManagement';
 import Rifas from './components/Rifas/Rifas';
 import Personas from './components/Personas/Personas';
 import Premios from './components/Premios/Premios';
@@ -71,7 +71,7 @@ function App() {
             isAuthenticated ? <Premios /> : <Navigate to="/login" />
           } />
           <Route path="/cuotas" element={
-            isAuthenticated ? <Cuotas /> : <Navigate to="/login" />
+            isAuthenticated ? <RaffleManagement /> : <Navigate to="/login" />
           } />
         </Routes>
       </div>

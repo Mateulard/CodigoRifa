@@ -5,116 +5,32 @@ import 'jspdf-autotable';
 
 export default function Comisiones() {
   const [rifas, setRifas] = useState([]);
-  const [personas, setPersonas] = useState([]);
   const [selectedRifa, setSelectedRifa] = useState(null);
+  const [personas, setPersonas] = useState([]);
   const [selectedPersona, setSelectedPersona] = useState(null);
   const [numerosRifa, setNumerosRifa] = useState([]);
+  const [filteredNumerosRifa, setFilteredNumerosRifa] = useState([]);
   const [comisionData, setComisionData] = useState(null);
   const [message, setMessage] = useState('');
   const [tipoPersona, setTipoPersona] = useState('vendedor');
-
-  const generatePDF = () => {
-    if (!selectedRifa || !selectedPersona || !numerosRifa || !comisionData) return;
-
-    const doc = new jsPDF();
-    const pageWidth = doc.internal.pageSize.width;
-    
-    // Set light green background color
-    const headerColor = [204, 255, 204];
-    
-    // Title
-    doc.setFillColor(...headerColor);
-    doc.rect(15, 15, pageWidth - 30, 10, 'F');
-    doc.setFontSize(16);
-    doc.text('RENDICION DE VENTAS', pageWidth / 2, 22, { align: 'center' });
-
-    // Header information
-    doc.setFontSize(10);
-    const today = new Date();
-    const headerData = [
-      ['FECHA:', today.toLocaleDateString()],
-      [tipoPersona.toUpperCase() + ':', selectedPersona.nombre],
-      ['CAMPAÑA:', selectedRifa.nombre],
-      ['FORMA DE PAGO:', 'CTAS PAGAS']
-    ];
-
-    doc.autoTable({
-      startY: 30,
-      head: [],
-      body: headerData,
-      theme: 'plain',
-      styles: {
-        cellPadding: 2,
-        fontSize: 10
-      },
-      columnStyles: {
-        0: { cellWidth: 40, fontStyle: 'bold' },
-        1: { cellWidth: 100 }
-      }
-    });
-
-    // Main table
-    const tableData = numerosRifa.map((numero, index) => {
-      const cuotasPagadas = contarCuotasPagadas(numero.cuotas_pagadas);
-      return [
-        (index + 1).toString(),
-        numero.numero.toString(),
-        '1',
-        cuotasPagadas.toString(),
-        `$ ${(cuotasPagadas * selectedRifa.valorCuota).toFixed(2)}`
-      ];
-    });
-
-    // Fill empty rows to reach 20
-    while (tableData.length < 20) {
-      tableData.push(['', '', '', '', '']);
-    }
-
-    // Calculate total
-    const total = numerosRifa.reduce((sum, numero) => {
-      const cuotasPagadas = contarCuotasPagadas(numero.cuotas_pagadas);
-      return sum + (cuotasPagadas * selectedRifa.valorCuota);
-    }, 0);
-
-    // Add total row
-    tableData.push(['', '', '', 'TOTALES', `$ ${total.toFixed(2)}`]);
-
-    doc.autoTable({
-      startY: doc.lastAutoTable.finalY + 10,
-      head: [['', 'SOCIO Nº', 'DESDE CUOTA', 'HASTA CUOTA', 'VALOR RENDIR']],
-      body: tableData,
-      theme: 'grid',
-      styles: {
-        cellPadding: 2,
-        fontSize: 10,
-        lineColor: [0, 0, 0],
-        lineWidth: 0.1
-      },
-      headStyles: {
-        fillColor: headerColor,
-        textColor: [0, 0, 0],
-        fontStyle: 'bold'
-      },
-      columnStyles: {
-        0: { cellWidth: 15 },
-        1: { cellWidth: 30 },
-        2: { cellWidth: 30 },
-        3: { cellWidth: 30 },
-        4: { cellWidth: 40, halign: 'right' }
-      }
-    });
-
-    // Save the PDF
-    doc.save(`rendicion_${selectedPersona.nombre}_${today.toLocaleDateString()}.pdf`);
-  };
-
-
-
-
+  const [metodosPago, setMetodosPago] = useState({});
+  const [todosMetodos, setTodosMetodos] = useState(true);
 
   useEffect(() => {
     fetchRifas();
   }, []);
+
+  useEffect(() => {
+    if (selectedRifa) {
+      fetchMetodosPago(selectedRifa.id);
+    }
+  }, [selectedRifa]);
+
+  useEffect(() => {
+    if (numerosRifa.length > 0) {
+      filterNumerosRifa();
+    }
+  }, [metodosPago, todosMetodos, numerosRifa]);
 
   const fetchRifas = () => {
     axios.get('http://localhost:4000/rifas')
@@ -127,11 +43,29 @@ export default function Comisiones() {
       });
   };
 
+  const fetchMetodosPago = (rifaId) => {
+    axios.get(`http://localhost:4000/metodosPago/${rifaId}`)
+      .then((response) => {
+        console.log("Métodos de pago recibidos:", response.data);
+        const metodosDisponibles = response.data.reduce((acc, metodo) => {
+          acc[metodo] = true;
+          return acc;
+        }, {});
+        setMetodosPago(metodosDisponibles);
+        console.log("Métodos de pago procesados:", metodosDisponibles);
+      })
+      .catch((error) => {
+        console.error("Error al obtener métodos de pago:", error);
+        setMessage("Error al cargar los métodos de pago. Por favor, intente nuevamente.");
+      });
+  };
+
   const handleRifaSelect = (rifaId) => {
     const selectedRifa = rifas.find(rifa => rifa.id === parseInt(rifaId));
     setSelectedRifa(selectedRifa);
     setSelectedPersona(null);
     setNumerosRifa([]);
+    setFilteredNumerosRifa([]);
     setComisionData(null);
     fetchPersonas(selectedRifa.organizacion_id);
   };
@@ -159,7 +93,9 @@ export default function Comisiones() {
     const endpoint = tipoPersona === 'vendedor' ? 'numerosRifaPorVendedor' : 'numerosRifaPorCobrador';
     axios.get(`http://localhost:4000/${endpoint}/${rifaId}/${personaId}`)
       .then((response) => {
+        console.log("Números de rifa recibidos:", response.data);
         setNumerosRifa(response.data);
+        filterNumerosRifa(response.data);
       })
       .catch((error) => {
         console.error(`Error al obtener números de rifa:`, error);
@@ -186,11 +122,145 @@ export default function Comisiones() {
     if (!cuotasPagadas) return 0;
     try {
       const cuotas = JSON.parse(cuotasPagadas);
-      return Object.values(cuotas).filter(Boolean).length;
+      return Object.values(cuotas).filter(estado => estado === 'pagada').length;
     } catch (error) {
       console.error("Error al parsear cuotas_pagadas:", error);
       return 0;
     }
+  };
+
+  const handleMetodoPagoChange = (metodo) => {
+    setMetodosPago(prev => {
+      const updated = {
+        ...prev,
+        [metodo]: !prev[metodo]
+      };
+      const todosMarcados = Object.values(updated).every(Boolean);
+      setTodosMetodos(todosMarcados);
+      return updated;
+    });
+  };
+
+  const handleTodosMetodosChange = () => {
+    const nuevoEstado = !todosMetodos;
+    setTodosMetodos(nuevoEstado);
+    setMetodosPago(Object.keys(metodosPago).reduce((acc, metodo) => {
+      acc[metodo] = nuevoEstado;
+      return acc;
+    }, {}));
+  };
+
+  const filterNumerosRifa = (numeros = numerosRifa) => {
+    if (todosMetodos) {
+      setFilteredNumerosRifa(numeros);
+    } else {
+      const selectedMethods = Object.entries(metodosPago)
+        .filter(([_, isSelected]) => isSelected)
+        .map(([method, _]) => method);
+      const filtered = numeros.filter(numero => selectedMethods.includes(numero.metodo_pago));
+      setFilteredNumerosRifa(filtered);
+    }
+  };
+
+  const generatePDF = () => {
+    if (!selectedRifa || !selectedPersona || filteredNumerosRifa.length === 0 || !comisionData) return;
+
+    const doc = new jsPDF();
+    const pageWidth = doc.internal.pageSize.width;
+    
+    // Set light green background color
+    const headerColor = [198, 224, 180];
+    
+    // Title
+    doc.setFillColor(...headerColor);
+    doc.rect(15, 15, pageWidth - 30, 10, 'F');
+    doc.setFontSize(16);
+    doc.text('RENDICIÓN DE VENTAS', pageWidth / 2, 22, { align: 'center' });
+
+    // Header information
+    doc.setFontSize(10);
+    const today = new Date();
+    const headerData = [
+      ['FECHA:', today.toLocaleDateString('es-ES')],
+      [tipoPersona.toUpperCase() + ':', selectedPersona.nombre],
+      ['CAMPAÑA:', selectedRifa.nombre],
+    ];
+
+    const metodosPagoSeleccionados = Object.entries(metodosPago)
+      .filter(([_, isSelected]) => isSelected)
+      .map(([metodo, _]) => metodo);
+
+    headerData.push(['FORMA DE PAGO:', metodosPagoSeleccionados.join(', ') || 'Todos']);
+    
+    // Calculate total paid installments
+    const totalCuotasPagadas = filteredNumerosRifa.reduce((total, numero) => total + contarCuotasPagadas(numero.cuotas_pagadas), 0);
+    headerData.push(['CUOTAS PAGADAS:', totalCuotasPagadas.toString()]);
+
+    doc.autoTable({
+      startY: 30,
+      head: [],
+      body: headerData,
+      theme: 'plain',
+      styles: {
+        cellPadding: 2,
+        fontSize: 10
+      },
+      columnStyles: {
+        0: { cellWidth: 40, fontStyle: 'bold' },
+        1: { cellWidth: 100 }
+      }
+    });
+
+    // Main table
+    const tableData = filteredNumerosRifa.map((numero, index) => {
+      const cuotasPagadas = contarCuotasPagadas(numero.cuotas_pagadas);
+      return [
+        (index + 1).toString(),
+        numero.numero.toString(),
+        '1',
+        cuotasPagadas.toString(),
+        `$ ${(cuotasPagadas * selectedRifa.valorCuota).toFixed(2)}`,
+        numero.metodo_pago
+      ];
+    });
+
+    // Calculate total
+    const total = filteredNumerosRifa.reduce((sum, numero) => {
+      const cuotasPagadas = contarCuotasPagadas(numero.cuotas_pagadas);
+      return sum + (cuotasPagadas * selectedRifa.valorCuota);
+    }, 0);
+
+    // Add total row
+    tableData.push(['', '', '', 'TOTALES', `$ ${total.toFixed(2)}`, '']);
+
+    doc.autoTable({
+      startY: doc.lastAutoTable.finalY + 10,
+      head: [['', 'SOCIO Nº', 'DESDE CUOTA', 'HASTA CUOTA', 'VALOR RENDIR', 'MÉTODO DE PAGO']],
+      body: tableData,
+      theme: 'grid',
+      styles: {
+        cellPadding: 2,
+        fontSize: 10,
+        lineColor: [0, 0, 0],
+        lineWidth: 0.1
+      },
+      headStyles: {
+        fillColor: headerColor,
+        textColor: [0, 0, 0],
+        fontStyle: 'bold'
+      },
+      columnStyles: {
+        0: { cellWidth: 10 },
+        1: { cellWidth: 25 },
+        2: { cellWidth: 25 },
+        3: { cellWidth: 25 },
+        4: { cellWidth: 30, halign: 'right' },
+        5: { cellWidth: 35 }
+      }
+    });
+
+    // Save the PDF
+    doc.save(`rendicion_${selectedPersona.nombre}_${today.toLocaleDateString('es-ES')}.pdf`);
   };
 
   return (
@@ -207,6 +277,7 @@ export default function Comisiones() {
             setSelectedRifa(null);
             setSelectedPersona(null);
             setNumerosRifa([]);
+            setFilteredNumerosRifa([]);
             setComisionData(null);
           }}
         >
@@ -250,77 +321,110 @@ export default function Comisiones() {
         </div>
       )}
 
-{selectedPersona && (
-      <div className="row mt-4">
-        <div className="col-md-6">
-          <h3>Detalles de Rifas Asignadas</h3>
-          <ul className="list-group">
-            {numerosRifa.map((numero) => (
-              <li key={numero.id} className="list-group-item">
-                <strong>Número de Rifa:</strong> {numero.numero}<br />
-                <strong>Cuotas Pagadas:</strong> {contarCuotasPagadas(numero.cuotas_pagadas)} / {selectedRifa.cuotas}<br />
-                <strong>Total:</strong> ${(contarCuotasPagadas(numero.cuotas_pagadas) * selectedRifa.valorCuota).toFixed(2)}
-                {tipoPersona === 'cobrador' && (
-                  <><br /><strong>Vendedor:</strong> {numero.vendedor_nombre || 'No asignado'}</>
-                )}
-              </li>
-            ))}
-          </ul>
-        </div>
-        <div className="col-md-6">
-          <h3>Detalles de Comisiones</h3>
-          {comisionData ? (
+      {selectedPersona && (
+        <div className="row mt-4">
+          <div className="col-md-6">
+            <h3>Detalles de Rifas Asignadas</h3>
             <ul className="list-group">
-              <li className="list-group-item">
-                <strong>Rifa:</strong> {comisionData.detalles.rifa_nombre}
-              </li>
-              <li className="list-group-item">
-                <strong>{tipoPersona === 'vendedor' ? 'Vendedor' : 'Cobrador'}:</strong> {comisionData.detalles.cobrador_nombre || comisionData.detalles.vendedor_nombre}
-              </li>
-              <li className="list-group-item">
-                <strong>Total Ventas:</strong> ${comisionData.totalVentas.toFixed(2)}
-              </li>
-              <li className="list-group-item">
-                <strong>{tipoPersona === 'vendedor' ? 'Comisión Total' : 'Descuento Total'}:</strong> ${Math.abs(comisionData.comisionTotal).toFixed(2)}
-              </li>
-              <li className="list-group-item">
-                <strong>Números Totales:</strong> {comisionData.detalles.numerosTotales}
-              </li>
-              <li className="list-group-item">
-                <strong>Cuotas Pagadas:</strong> {comisionData.detalles.cuotasPagadas}
-              </li>
-              <li className="list-group-item">
-                <strong>Cuotas Comisionables:</strong> {comisionData.detalles.cuotasComisionables}
-              </li>
-              <li className="list-group-item">
-                <strong>Valor de Cuota:</strong> ${comisionData.detalles.valorCuota.toFixed(2)}
-              </li>
-              <li className="list-group-item">
-                <strong>Porcentaje de {tipoPersona === 'vendedor' ? 'Comisión' : 'Descuento'}:</strong> {comisionData.detalles.porcentajeComision}%
-              </li>
-              {tipoPersona === 'cobrador' && (
-                <li className="list-group-item">
-                  <strong>Vendedores Asociados:</strong> {comisionData.detalles.vendedoresUnicos.join(', ')}
+              {filteredNumerosRifa.map((numero) => (
+                <li key={numero.id} className="list-group-item">
+                  <strong>Número de Rifa:</strong> {numero.numero}<br />
+                  <strong>Cuotas Pagadas:</strong> {contarCuotasPagadas(numero.cuotas_pagadas)} / {selectedRifa.cuotas}<br />
+                  <strong>Total:</strong> ${(contarCuotasPagadas(numero.cuotas_pagadas) * selectedRifa.valorCuota).toFixed(2)}<br />
+                  <strong>Método de Pago:</strong> {numero.metodo_pago || 'No especificado'}
+                  {tipoPersona === 'cobrador' && (
+                    <><br /><strong>Vendedor:</strong> {numero.vendedor_nombre || 'No asignado'}</>
+                  )}
                 </li>
-              )}
+              ))}
             </ul>
-          ) : (
-            <p>No hay datos de comisión disponibles.</p>
-          )}
-        </div>
+          </div>
+          <div className="col-md-6">
+            <h3>Detalles de Comisiones</h3>
+            {comisionData ? (
+              <ul className="list-group">
+                <li className="list-group-item">
+                  <strong>Rifa:</strong> {comisionData.detalles.rifa_nombre}
+                </li>
+                <li className="list-group-item">
+                  <strong>{tipoPersona === 'vendedor' ? 'Vendedor' : 'Cobrador'}:</strong> {comisionData.detalles.cobrador_nombre || comisionData.detalles.vendedor_nombre}
+                </li>
+                <li className="list-group-item">
+                  <strong>Total Ventas:</strong> ${comisionData.totalVentas.toFixed(2)}
+                </li>
+                <li className="list-group-item">
+                  <strong>{tipoPersona === 'vendedor' ? 'Comisión Total' : 'Descuento Total'}:</strong> ${Math.abs(comisionData.comisionTotal).toFixed(2)}
+                </li>
+                <li className="list-group-item">
+                  <strong>Números Totales:</strong> {comisionData.detalles.numerosTotales}
+                </li>
+                <li className="list-group-item">
+                  <strong>Cuotas Pagadas:</strong> {comisionData.detalles.cuotasPagadas}
+                </li>
+                <li className="list-group-item">
+                  <strong>Cuotas Comisionables:</strong> {comisionData.detalles.cuotasComisionables}
+                </li>
+                <li className="list-group-item">
+                  <strong>Valor de Cuota:</strong> ${comisionData.detalles.valorCuota.toFixed(2)}
+                </li>
+                <li className="list-group-item">
+                  <strong>Porcentaje de {tipoPersona === 'vendedor' ? 'Comisión' : 'Descuento'}:</strong> {comisionData.detalles.porcentajeComision}%
+                </li>
+                {tipoPersona === 'cobrador' && (
+                  <li className="list-group-item">
+                    <strong>Vendedores Asociados:</strong> {comisionData.detalles.vendedoresUnicos.join(', ')}
+                  </li>
+                )}
+              </ul>
+            ) : (
+              <p>No hay datos de comisión disponibles.</p>
+            )}
+          </div>
 
-        {/* Nuevo botón para generar PDF */}
-        <div className="col-12 mt-4">
-          <button
-            className="btn btn-primary"
-            onClick={generatePDF}
-            disabled={!comisionData || numerosRifa.length === 0}
-          >
-            Generar PDF de Rendición
-          </button>
-        </div>
-      </div>
-    )}
+          <div className="col-12 mt-4">
+            <h4>Seleccionar Métodos de Pago</h4>
+            <div className="form-check">
+              <input
+                className="form-check-input"
+                type="checkbox"
+                id="todosMetodos"
+                checked={todosMetodos}
+                onChange={handleTodosMetodosChange}
+              />
+              <label className="form-check-label" htmlFor="todosMetodos">
+                Todos los métodos
+              </label>
+            </div>
+            {Object.keys(metodosPago).map((metodo) => (
+              <div className="form-check" key={metodo}>
+                <input
+                  className="form-check-input"
+                  type="checkbox"
+                  id={metodo}
+                  checked={metodosPago[metodo]}
+                  onChange={() => handleMetodoPagoChange(metodo)}
+                />
+                <label className="form-check-label" htmlFor={metodo}>
+                  {metodo}
+                </label>
+              </div>
+            ))}
+          </div>
 
-    {message && <div className="alert alert-info mt-3" role="alert">{message}</div>}
-  </div> )}
+          <div className="col-12 mt-4">
+            <button
+              className="btn btn-primary"
+              onClick={generatePDF}
+              disabled={!comisionData || filteredNumerosRifa.length === 0}
+            >
+              Generar PDF de Rendición
+            </button>
+          </div>
+        </div>
+      )}
+
+      {message && <div className="alert alert-info mt-3" role="alert">{message}</div>}
+    </div>
+  );
+}
+

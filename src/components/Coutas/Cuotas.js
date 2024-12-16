@@ -13,6 +13,7 @@ export default function Cuotas() {
   const [numerosRifa, setNumerosRifa] = useState([]);
   const [message, setMessage] = useState('');
   const [totalGeneral, setTotalGeneral] = useState(0);
+  const [networkError, setNetworkError] = useState(false);
 
   useEffect(() => {
     fetchRifas();
@@ -26,49 +27,68 @@ export default function Cuotas() {
   }, [numerosRifa, selectedRifa]);
 
   const fetchRifas = () => {
+    console.log('Fetching rifas...');
     axios.get('http://localhost:4000/rifas')
       .then((response) => {
+        console.log('Rifas fetched successfully:', response.data);
         setRifas(response.data);
       })
       .catch((error) => {
         console.error("Error al obtener rifas:", error);
         setMessage("Error al cargar las rifas. Por favor, intente nuevamente.");
+        if (error.message === "Network Error") {
+          setNetworkError(true);
+        }
       });
   };
 
   const handleRifaSelect = (rifaId) => {
+    console.log('Rifa selected:', rifaId);
     const selectedRifa = rifas.find(rifa => rifa.id === parseInt(rifaId));
     setSelectedRifa(selectedRifa);
     setSelectedVendedor(null);
     setNumerosRifa([]);
+    setNetworkError(false);
     fetchVendedores(selectedRifa.organizacion_id);
   };
 
   const fetchVendedores = (organizacionId) => {
+    console.log('Fetching vendedores for organizacion:', organizacionId);
     axios.get(`http://localhost:4000/vendedoresPorOrganizacion/${organizacionId}`)
       .then((response) => {
+        console.log('Vendedores fetched successfully:', response.data);
         setVendedores(response.data);
       })
       .catch((error) => {
         console.error("Error al obtener vendedores:", error);
         setMessage("Error al cargar los vendedores. Por favor, intente nuevamente.");
+        if (error.message === "Network Error") {
+          setNetworkError(true);
+        }
       });
   };
 
   const handleVendedorSelect = (vendedorId) => {
+    console.log('Vendedor selected:', vendedorId);
     const vendedorSeleccionado = vendedores.find(vendedor => vendedor.id === parseInt(vendedorId));
     setSelectedVendedor(vendedorSeleccionado);
+    setNetworkError(false);
     fetchNumerosRifaPorVendedor(selectedRifa.id, vendedorId);
   };
 
   const fetchNumerosRifaPorVendedor = (rifaId, vendedorId) => {
+    console.log(`Fetching numeros rifa for rifa ${rifaId} and vendedor ${vendedorId}`);
     axios.get(`http://localhost:4000/numerosRifaPorVendedor/${rifaId}/${vendedorId}`)
       .then((response) => {
+        console.log('Numeros rifa fetched successfully:', response.data);
         setNumerosRifa(response.data);
       })
       .catch((error) => {
         console.error("Error al obtener números de rifa:", error);
         setMessage("Error al cargar los números de rifa del vendedor. Por favor, intente nuevamente.");
+        if (error.message === "Network Error") {
+          setNetworkError(true);
+        }
       });
   };
 
@@ -139,9 +159,9 @@ export default function Cuotas() {
   };
 
   return (
-    <div className="container mt-5">
-      <h2 className="mb-4">Lista de Rifas</h2>
-      <div className="form-group">
+    <div className='m-5'>
+      <h3 className="mb-4">Lista de Rifas</h3>
+      <div className="form-group mt-3">
         <label htmlFor="rifaSelect">Selecciona una rifa:</label>
         <select
           id="rifaSelect"
@@ -158,7 +178,7 @@ export default function Cuotas() {
       </div>
       
       {selectedRifa && selectedVendedor && (
-        <h4>Vendedor: {selectedVendedor.nombre}</h4>
+        <h4 className="mt-3">Vendedor: {selectedVendedor.nombre}</h4>
       )}
 
       {selectedRifa && (
@@ -229,6 +249,12 @@ export default function Cuotas() {
       )}
 
       {message && <div className="alert alert-info mt-3">{message}</div>}
+      {networkError && (
+        <div className="alert alert-danger mt-3">
+          Error de red. Por favor, verifica tu conexión y asegúrate de que el servidor esté en funcionamiento.
+        </div>
+      )}
     </div>
   );
 }
+

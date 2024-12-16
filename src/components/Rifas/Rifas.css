@@ -5,3 +5,55 @@
 h2, h3, h4 {
     color: #333;
 }
+
+.ver-rifas-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
+  }
+  
+  .rifa-select {
+    width: 100%;
+    padding: 10px;
+    margin-bottom: 20px;
+    font-size: 16px;
+  }
+  
+  .numeros-rifa-table-container {
+    overflow-x: auto;
+  }
+  
+  .numeros-rifa-table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+  
+  .numeros-rifa-table th,
+  .numeros-rifa-table td {
+    border: 1px solid #ddd;
+    padding: 8px;
+    text-align: left;
+  }
+  
+  .numeros-rifa-table th {
+    background-color: #f2f2f2;
+    font-weight: bold;
+  }
+  
+  .numeros-rifa-table tr:nth-child(even) {
+    background-color: #f9f9f9;
+  }
+  
+  .numeros-rifa-table input {
+    width: 100%;
+    padding: 5px;
+    box-sizing: border-box;
+  }
+  
+  .numeros-rifa-table button {
+    padding: 5px 10px;
+    margin: 2px;
+    cursor: pointer;
+  }
+  
+  

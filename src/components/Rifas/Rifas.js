@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import CrearRifa from './CrearRifa';
 import VerRifas from './VerRifas';
+import AdministrarRifas from './AdministrarRifas';
 import './Rifas.css';
 
 export default function Rifas() {
@@ -26,9 +27,18 @@ export default function Rifas() {
             Crear Rifa
           </button>
         </li>
+        <li className="nav-item">
+          <button
+            className={`nav-link ${activeTab === 'administrar' ? 'active' : ''}`}
+            onClick={() => setActiveTab('administrar')}
+          >
+            Administrar Rifas
+          </button>
+        </li>
       </ul>
       {activeTab === 'crear' && <CrearRifa />}
       {activeTab === 'ver' && <VerRifas />}
+      {activeTab === 'administrar' && <AdministrarRifas />}
     </div>
   );
 }

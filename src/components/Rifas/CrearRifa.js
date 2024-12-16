@@ -1,218 +1,285 @@
-import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+'use client'
 
-const meses = ['ENE', 'FEB', 'MAR', 'ABR', 'MAY', 'JUN', 'JUL', 'AGO', 'SEP', 'OCT', 'NOV', 'DIC'];
+import React, { useState, useEffect } from 'react'
+import axios from 'axios'
 
-export default function CrearRifa() {
-  const [nombre, setNombre] = useState('');
-  const [organizacionId, setOrganizacionId] = useState('');
-  const [rangoInicio, setRangoInicio] = useState('');
-  const [rangoFin, setRangoFin] = useState('');
-  const [crearBonos, setCrearBonos] = useState(false);
-  const [cantidadBonos, setCantidadBonos] = useState('');
-  const [cuotas, setCuotas] = useState('');
-  const [valorCuota, setValorCuota] = useState('');
-  const [mesInicio, setMesInicio] = useState('');
-  const [organizaciones, setOrganizaciones] = useState([]);
-  const [message, setMessage] = useState('');
-  const [error, setError] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
+const meses = ['ENE', 'FEB', 'MAR', 'ABR', 'MAY', 'JUN', 'JUL', 'AGO', 'SEP', 'OCT', 'NOV', 'DIC']
+
+const tiposPremios = [
+  { value: 'diario', label: 'Estímulos Diarios' },
+  { value: 'pre-semanal', label: 'Estímulos Pre-semanales' },
+  { value: 'semanal', label: 'Estímulos Semanales' },
+  { value: 'pre-mensual', label: 'Estímulos Pre-mensuales' },
+  { value: 'mensual', label: 'Estímulos Mensuales' },
+  { value: 'final', label: 'Premios Finales' },
+  { value: 'especial', label: 'Premios Especiales' },
+]
+
+export default function CrearRifaMultipasos() {
+  const [paso, setPaso] = useState(1)
+  const [formData, setFormData] = useState({
+    nombre: '',
+    organizacionId: '',
+    rangoInicio: '',
+    rangoFin: '',
+    crearBonos: false,
+    cantidadBonos: '',
+    cuotas: '',
+    valorCuota: '',
+    mesInicio: '',
+    tiposPremios: {},
+  })
+  const [organizaciones, setOrganizaciones] = useState([])
+  const [message, setMessage] = useState('')
+  const [error, setError] = useState('')
+  const [isLoading, setIsLoading] = useState(false)
 
   useEffect(() => {
-    fetchOrganizaciones();
-  }, []);
+    fetchOrganizaciones()
+  }, [])
 
   const fetchOrganizaciones = async () => {
     try {
-      const response = await axios.get('http://localhost:4000/organizaciones');
-      setOrganizaciones(response.data);
+      const response = await axios.get('http://localhost:4000/organizaciones')
+      setOrganizaciones(response.data)
     } catch (error) {
-      console.error('Error fetching organizaciones:', error);
-      setError('Error al cargar las organizaciones. Por favor, intente nuevamente.');
+      console.error('Error al cargar las organizaciones:', error)
+      setError('Error al cargar las organizaciones. Por favor, intente nuevamente.')
     }
-  };
+  }
 
-  const validateForm = () => {
-    if (!nombre.trim()) return 'El nombre de la rifa es requerido.';
-    if (!organizacionId) return 'Debe seleccionar una organización.';
-    if (isNaN(parseInt(rangoInicio)) || isNaN(parseInt(rangoFin))) return 'Los rangos deben ser números válidos.';
-    if (parseInt(rangoInicio) >= parseInt(rangoFin)) return 'El rango final debe ser mayor que el rango inicial.';
-    if (crearBonos && (!cantidadBonos || parseInt(cantidadBonos) <= 0)) return 'La cantidad de bonos debe ser un número positivo.';
-    if (!cuotas || parseInt(cuotas) < 1 || parseInt(cuotas) > 12) return 'El número de cuotas debe estar entre 1 y 12.';
-    if (!valorCuota || parseFloat(valorCuota) <= 0) return 'El valor de la cuota debe ser mayor que cero.';
-    if (!mesInicio) return 'Debe seleccionar un mes de inicio.';
-    return null;
-  };
+  const handleChange = (e) => {
+    const { name, value, type, checked } = e.target
+    setFormData(prevState => ({
+      ...prevState,
+      [name]: type === 'checkbox' ? checked : value
+    }))
+  }
+
+  const handleTipoPremioChange = (tipo, cantidad) => {
+    setFormData(prevState => ({
+      ...prevState,
+      tiposPremios: {
+        ...prevState.tiposPremios,
+        [tipo]: cantidad ? parseInt(cantidad, 10) : 0
+      }
+    }))
+  }
 
   const handleSubmit = async (e) => {
-    e.preventDefault();
-    setMessage('');
-    setError('');
-
-    const validationError = validateForm();
-    if (validationError) {
-      setError(validationError);
-      return;
-    }
-
-    setIsLoading(true);
+    e.preventDefault()
+    setMessage('')
+    setError('')
+    setIsLoading(true)
 
     try {
-      const response = await axios.post('http://localhost:4000/crearRifa', {
-        nombre,
-        organizacion_id: parseInt(organizacionId),
-        rangoInicio: parseInt(rangoInicio),
-        rangoFin: parseInt(rangoFin),
-        numeros: parseInt(rangoFin) - parseInt(rangoInicio) + 1,
-        crearBonos,
-        cantidadBonos: crearBonos ? parseInt(cantidadBonos) : null,
-        cuotas: parseInt(cuotas),
-        valorCuota: parseFloat(valorCuota),
-        mesInicio: parseInt(mesInicio)
-      });
-
-      setMessage('Rifa creada exitosamente');
-      resetForm();
+      const response = await axios.post('http://localhost:4000/crearRifa', formData)
+      setMessage('Rifa creada exitosamente')
+      // Reiniciar el formulario y volver al primer paso
+      setFormData({
+        nombre: '',
+        organizacionId: '',
+        rangoInicio: '',
+        rangoFin: '',
+        crearBonos: false,
+        cantidadBonos: '',
+        cuotas: '',
+        valorCuota: '',
+        mesInicio: '',
+        tiposPremios: {},
+      })
+      setPaso(1)
     } catch (error) {
-      console.error('Error creating rifa:', error);
-      setError('Error al crear la rifa. Por favor, intente nuevamente.');
+      console.error('Error al crear la rifa:', error)
+      setError('Error al crear la rifa. Por favor, intente nuevamente.')
     } finally {
-      setIsLoading(false);
+      setIsLoading(false)
     }
-  };
+  }
 
-  const resetForm = () => {
-    setNombre('');
-    setOrganizacionId('');
-    setRangoInicio('');
-    setRangoFin('');
-    setCrearBonos(false);
-    setCantidadBonos('');
-    setCuotas('');
-    setValorCuota('');
-    setMesInicio('');
-  };
+  const siguientePaso = () => {
+    setPaso(paso + 1)
+  }
 
-  return (
-    <div className="container mt-5">
-      <h2>Crear Nueva Rifa</h2>
-      <form onSubmit={handleSubmit}>
-        <div className="mb-3">
-          <label htmlFor="nombre" className="form-label">Nombre de la Rifa</label>
-          <input
-            type="text"
-            className="form-control"
-            id="nombre"
-            value={nombre}
-            onChange={(e) => setNombre(e.target.value)}
-            required
-          />
-        </div>
-        <div className="mb-3">
-          <label htmlFor="organizacion" className="form-label">Organización</label>
-          <select
-            className="form-control"
-            id="organizacion"
-            value={organizacionId}
-            onChange={(e) => setOrganizacionId(e.target.value)}
-            required
-          >
-            <option value="">Selecciona una organización</option>
-            {organizaciones.map(org => (
-              <option key={org.id} value={org.id}>{org.nombre}</option>
-            ))}
-          </select>
-        </div>
-        <div className="mb-3">
-          <label htmlFor="rangoInicio" className="form-label">Número Inicial</label>
-          <input
-            type="number"
-            className="form-control"
-            id="rangoInicio"
-            value={rangoInicio}
-            onChange={(e) => setRangoInicio(e.target.value)}
-            required
-          />
-        </div>
-        <div className="mb-3">
-          <label htmlFor="rangoFin" className="form-label">Número Final</label>
-          <input
-            type="number"
-            className="form-control"
-            id="rangoFin"
-            value={rangoFin}
-            onChange={(e) => setRangoFin(e.target.value)}
-            required
-          />
-        </div>
-        <div className="mb-3 form-check">
+  const pasoAnterior = () => {
+    setPaso(paso - 1)
+  }
+
+  const renderPaso1 = () => (
+    <div>
+      <div>
+        <label htmlFor="nombre">Nombre de la Rifa</label>
+        <input
+          type="text"
+          id="nombre"
+          name="nombre"
+          value={formData.nombre}
+          onChange={handleChange}
+          required
+        />
+      </div>
+      <div>
+        <label htmlFor="organizacionId">Organización</label>
+        <select
+          id="organizacionId"
+          name="organizacionId"
+          value={formData.organizacionId}
+          onChange={handleChange}
+          required
+        >
+          <option value="">Selecciona una organización</option>
+          {organizaciones.map(org => (
+            <option key={org.id} value={org.id}>{org.nombre}</option>
+          ))}
+        </select>
+      </div>
+      <div>
+        <label htmlFor="rangoInicio">Número Inicial</label>
+        <input
+          type="number"
+          id="rangoInicio"
+          name="rangoInicio"
+          value={formData.rangoInicio}
+          onChange={handleChange}
+          required
+        />
+      </div>
+      <div>
+        <label htmlFor="rangoFin">Número Final</label>
+        <input
+          type="number"
+          id="rangoFin"
+          name="rangoFin"
+          value={formData.rangoFin}
+          onChange={handleChange}
+          required
+        />
+      </div>
+      <div>
+        <label>
           <input
             type="checkbox"
-            className="form-check-input"
-            id="crearBonos"
-            checked={crearBonos}
-            onChange={(e) => setCrearBonos(e.target.checked)}
+            name="crearBonos"
+            checked={formData.crearBonos}
+            onChange={handleChange}
           />
-          <label className="form-check-label" htmlFor="crearBonos">Crear Bonos</label>
-        </div>
-        {crearBonos && (
-          <div className="mb-3">
-            <label htmlFor="cantidadBonos" className="form-label">Cantidad de Bonos</label>
-            <input
-              type="number"
-              className="form-control"
-              id="cantidadBonos"
-              value={cantidadBonos}
-              onChange={(e) => setCantidadBonos(e.target.value)}
-              required
-            />
-          </div>
-        )}
-        <div className="mb-3">
-          <label htmlFor="cuotas" className="form-label">Número de Cuotas (máximo 12)</label>
+          Crear Bonos
+        </label>
+      </div>
+      {formData.crearBonos && (
+        <div>
+          <label htmlFor="cantidadBonos">Cantidad de Bonos</label>
           <input
             type="number"
-            className="form-control"
-            id="cuotas"
-            value={cuotas}
-            onChange={(e) => setCuotas(Math.min(12, Math.max(1, parseInt(e.target.value) || 1)).toString())}
-            min="1"
-            max="12"
+            id="cantidadBonos"
+            name="cantidadBonos"
+            value={formData.cantidadBonos}
+            onChange={handleChange}
             required
           />
         </div>
-        <div className="mb-3">
-          <label htmlFor="valorCuota" className="form-label">Valor de la Cuota</label>
-          <input
-            type="number"
-            className="form-control"
-            id="valorCuota"
-            value={valorCuota}
-            onChange={(e) => setValorCuota(e.target.value)}
-            required
-          />
-        </div>
-        <div className="mb-3">
-          <label htmlFor="mesInicio" className="form-label">Mes de Inicio</label>
-          <select
-            className="form-control"
-            id="mesInicio"
-            value={mesInicio}
-            onChange={(e) => setMesInicio(e.target.value)}
-            required
-          >
-            <option value="">Selecciona un mes</option>
-            {meses.map((mes, index) => (
-              <option key={index} value={index}>{mes}</option>
-            ))}
-          </select>
-        </div>
-        <button type="submit" className="btn btn-primary" disabled={isLoading}>
-          {isLoading ? 'Creando...' : 'Crear Rifa'}
-        </button>
-      </form>
-      {message && <div className="alert alert-success mt-3">{message}</div>}
-      {error && <div className="alert alert-danger mt-3">{error}</div>}
+      )}
+      <div>
+        <label htmlFor="cuotas">Número de Cuotas (máximo 12)</label>
+        <input
+          type="number"
+          id="cuotas"
+          name="cuotas"
+          value={formData.cuotas}
+          onChange={handleChange}
+          min="1"
+          max="12"
+          required
+        />
+      </div>
+      <div>
+        <label htmlFor="valorCuota">Valor de la Cuota</label>
+        <input
+          type="number"
+          id="valorCuota"
+          name="valorCuota"
+          value={formData.valorCuota}
+          onChange={handleChange}
+          required
+        />
+      </div>
+      <button type="button" onClick={siguientePaso}>Siguiente</button>
     </div>
-  );
+  )
+
+  const renderPaso2 = () => (
+    <div>
+      <div>
+        <label htmlFor="mesInicio">Mes de Inicio</label>
+        <select
+          id="mesInicio"
+          name="mesInicio"
+          value={formData.mesInicio}
+          onChange={handleChange}
+          required
+        >
+          <option value="">Selecciona un mes</option>
+          {meses.map((mes, index) => (
+            <option key={index} value={index}>{mes}</option>
+          ))}
+        </select>
+      </div>
+      <button type="button" onClick={pasoAnterior}>Anterior</button>
+      <button type="button" onClick={siguientePaso}>Siguiente</button>
+    </div>
+  )
+
+  const renderPaso3 = () => (
+    <div>
+      <div>
+        <p>Tipos de Premios</p>
+        {tiposPremios.map((tipo) => (
+          <div key={tipo.value}>
+            <label>
+              <input
+                type="checkbox"
+                checked={formData.tiposPremios[tipo.value] > 0}
+                onChange={(e) => handleTipoPremioChange(tipo.value, e.target.checked ? 1 : 0)}
+              />
+              {tipo.label}
+            </label>
+            {formData.tiposPremios[tipo.value] > 0 && (
+              <input
+                type="number"
+                value={formData.tiposPremios[tipo.value]}
+                onChange={(e) => handleTipoPremioChange(tipo.value, e.target.value)}
+                min="1"
+                required
+              />
+            )}
+          </div>
+        ))}
+      </div>
+      <button type="button" onClick={pasoAnterior}>Anterior</button>
+      <button type="submit" disabled={isLoading}>
+        {isLoading ? 'Creando...' : 'Crear Rifa'}
+      </button>
+    </div>
+  )
+
+  return (
+    <div style={{ maxWidth: '600px', margin: '0 auto', padding: '20px' }}>
+      <h1 style={{ fontSize: '24px', marginBottom: '20px' }}>Crear Nueva Rifa</h1>
+      {message && <div style={{ backgroundColor: '#e6ffe6', border: '1px solid #4CAF50', color: '#4CAF50', padding: '10px', marginBottom: '20px' }}>{message}</div>}
+      {error && <div style={{ backgroundColor: '#ffebee', border: '1px solid #f44336', color: '#f44336', padding: '10px', marginBottom: '20px' }}>{error}</div>}
+      <div style={{ marginBottom: '20px' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+          <div style={{ height: '4px', width: '32%', backgroundColor: paso >= 1 ? '#2196F3' : '#e0e0e0' }}></div>
+          <div style={{ height: '4px', width: '32%', backgroundColor: paso >= 2 ? '#2196F3' : '#e0e0e0' }}></div>
+          <div style={{ height: '4px', width: '32%', backgroundColor: paso >= 3 ? '#2196F3' : '#e0e0e0' }}></div>
+        </div>
+      </div>
+      <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
+        {paso === 1 && renderPaso1()}
+        {paso === 2 && renderPaso2()}
+        {paso === 3 && renderPaso3()}
+      </form>
+    </div>
+  )
 }
+

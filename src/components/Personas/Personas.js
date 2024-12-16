@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import './Personas.css';
+import './RifaAdmin.css';
 import Organizaciones from './Instituciones/Instituciones';
 import Vendedores from './Vendedores/Vendedores';
 import Cobradores from './Cobradores/Cobradores';
@@ -151,8 +151,8 @@ export default function Personas() {
   };
 
   return (
-    <div className="container mt-5">
-      <h1 className="text-center mb-4">Gestión de Personas</h1>
+    <div className="container">
+      <h1 className="text-center mb-5">Gestión de Personas</h1>
 
       <ul className="nav nav-tabs mb-4">
         <li className="nav-item">
@@ -297,3 +297,4 @@ export default function Personas() {
     </div>
   );
 }
+
