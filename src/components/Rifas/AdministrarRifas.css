@@ -1,63 +1,108 @@
 .administrar-rifas-container {
-    max-width: 800px;
-    margin: 0 auto;
-    padding: 20px;
-  }
-  
-  .rifas-table {
-    width: 100%;
-    border-collapse: collapse;
-    margin-bottom: 20px;
-  }
-  
-  .rifas-table th,
-  .rifas-table td {
-    border: 1px solid #ddd;
-    padding: 8px;
-    text-align: left;
-  }
-  
-  .rifas-table th {
-    background-color: #f2f2f2;
-    font-weight: bold;
-  }
-  
-  .delete-button {
-    background-color: #ff4d4d;
-    color: white;
-    border: none;
-    padding: 5px 10px;
-    cursor: pointer;
-  }
-  
-  .confirmation-modal {
-    background-color: #f9f9f9;
-    border: 1px solid #ddd;
-    padding: 20px;
-    margin-top: 20px;
-  }
-  
-  .confirmation-buttons {
-    margin-top: 10px;
-  }
-  
-  .confirm-button,
-  .cancel-button {
-    margin-right: 10px;
-    padding: 5px 10px;
-    cursor: pointer;
-  }
-  
-  .confirm-button {
-    background-color: #4CAF50;
-    color: white;
-    border: none;
-  }
-  
-  .cancel-button {
-    background-color: #f44336;
-    color: white;
-    border: none;
-  }
-  
-  
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 20px;
+  background-color: #ffffff; /* Fondo blanco */
+  color: #000000; /* Texto negro */
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.rifas-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 20px;
+  background-color: #ffffff;
+}
+
+.rifas-table th,
+.rifas-table td {
+  border: 1px solid #ddd;
+  padding: 8px;
+  text-align: left;
+  color: #000000; /* Texto negro */
+}
+
+.rifas-table th {
+  background-color: #f8f8f8; /* Fondo más claro para encabezados */
+  font-weight: bold;
+}
+
+.rifas-table tr:nth-child(even) {
+  background-color: #f9f9f9; /* Fondo alternativo para filas pares */
+}
+
+.delete-button {
+  background-color: #ff4d4d; /* Rojo para destacar */
+  color: #ffffff; /* Texto blanco */
+  border: none;
+  padding: 5px 10px;
+  cursor: pointer;
+  border-radius: 4px;
+  transition: all 0.3s ease;
+}
+
+.delete-button:hover {
+  background-color: #e60000; /* Rojo más oscuro al pasar el cursor */
+}
+
+.confirmation-modal {
+  background-color: #ffffff; /* Fondo blanco */
+  border: 1px solid #ddd;
+  padding: 20px;
+  margin-top: 20px;
+  border-radius: 8px;
+}
+
+.confirmation-buttons {
+  margin-top: 10px;
+}
+
+.confirm-button,
+.cancel-button {
+  margin-right: 10px;
+  padding: 5px 10px;
+  cursor: pointer;
+  border-radius: 4px;
+  border: none;
+  font-weight: bold;
+}
+
+.confirm-button {
+  background-color: #4CAF50; /* Verde */
+  color: #ffffff; /* Texto blanco */
+}
+
+.confirm-button:hover {
+  background-color: #45a049; /* Verde más oscuro */
+}
+
+.cancel-button {
+  background-color: #f44336; /* Rojo */
+  color: #ffffff; /* Texto blanco */
+}
+
+.cancel-button:hover {
+  background-color: #e53935; /* Rojo más oscuro */
+}
+
+.btn {
+  margin-bottom: 15px;
+  background-color: #5e60ce; /* Color primario */
+  color: #ffffff;
+  padding: 8px 16px;
+  border: none;
+  border-radius: 4px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.btn:hover {
+  background-color: #3d3f92; /* Color primario más oscuro */
+}
+
+h2, h3, h4 {
+  color: #000000; /* Texto negro */
+}

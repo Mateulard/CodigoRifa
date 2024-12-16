@@ -100,27 +100,6 @@ export default function RegistroPremios() {
     setSelectedRifa(rifa || null);
   };
 
-  const handleGanadorChange = async (premioId, ganador) => {
-    if (!premioId) {
-      console.error('Premio ID is undefined');
-      setError('Error al actualizar el ganador: ID del premio no válido');
-      return;
-    }
-
-    try {
-      await axios.put(`http://localhost:4000/actualizarGanador/${premioId}`, { ganador });
-      const updatedPremios = { ...premios };
-      Object.keys(updatedPremios).forEach(tipo => {
-        updatedPremios[tipo] = updatedPremios[tipo].map(p => 
-          p.id === premioId ? { ...p, ganador } : p
-        );
-      });
-      setPremios(updatedPremios);
-    } catch (error) {
-      console.error('Error al actualizar el ganador:', error);
-      setError('Error al actualizar el ganador. Por favor, intente de nuevo.');
-    }
-  };
 
   const handleSearch = async () => {
     if (!selectedRifa || !searchNumber) return;
@@ -154,7 +133,6 @@ export default function RegistroPremios() {
               <th className="border border-gray-300 px-4 py-2">Orden</th>
               <th className="border border-gray-300 px-4 py-2">Número Ganador</th>
               <th className="border border-gray-300 px-4 py-2">Premio</th>
-              <th className="border border-gray-300 px-4 py-2">Ganador</th>
             </tr>
           </thead>
           <tbody>
@@ -162,17 +140,8 @@ export default function RegistroPremios() {
               <tr key={premio.id}>
                 <td className="border border-gray-300 px-4 py-2">{premio.fecha}</td>
                 <td className="border border-gray-300 px-4 py-2">{premio.orden}</td>
-                <td className="border border-gray-300 px-4 py-2">{premio.numeroGanador}</td>
+                <td className="border border-gray-300 px-4 py-2">{premio.numero_ganador}</td>
                 <td className="border border-gray-300 px-4 py-2">{premio.premio}</td>
-                <td className="border border-gray-300 px-4 py-2">
-                  <input
-                    type="text"
-                    value={premio.ganador || ''}
-                    onChange={(e) => handleGanadorChange(premio.id, e.target.value)}
-                    className="w-full p-1 border rounded"
-                    placeholder="Nombre del ganador"
-                  />
-                </td>
               </tr>
             ))}
           </tbody>
@@ -180,6 +149,25 @@ export default function RegistroPremios() {
       </div>
     )
   );
+
+  const getCuotasPagadas = (cuotas_pagadas) => {
+    if (!cuotas_pagadas) return 0;
+    
+    try {
+      const parsedCuotas = typeof cuotas_pagadas === 'string' 
+        ? JSON.parse(cuotas_pagadas) 
+        : cuotas_pagadas;
+
+      if (typeof parsedCuotas === 'object' && parsedCuotas !== null) {
+        return Object.values(parsedCuotas).filter(Boolean).length;
+      }
+      
+      return 0;
+    } catch (error) {
+      console.error('Error parsing cuotas_pagadas:', error);
+      return 0;
+    }
+  };
 
   return (
     <div className="container mx-auto p-4">
@@ -270,14 +258,7 @@ export default function RegistroPremios() {
               <h4 className="font-semibold">Información del Ganador:</h4>
               <p>Nombre: {winnerInfo.nombre_comprador || 'No disponible'}</p>
               <p>Número: {winnerInfo.numero}</p>
-              <p>Cuotas pagadas: {
-                winnerInfo.cuotas_pagadas 
-                  ? (typeof winnerInfo.cuotas_pagadas === 'string' 
-                      ? JSON.parse(winnerInfo.cuotas_pagadas) 
-                      : winnerInfo.cuotas_pagadas
-                    ).filter(Boolean).length 
-                  : 0
-              }</p>
+              <p>Cuotas pagadas: {getCuotasPagadas(winnerInfo.cuotas_pagadas)}</p>
               <p>Vendedor: {winnerInfo.vendedor_nombre || 'No asignado'}</p>
               <p>Cobrador: {winnerInfo.cobrador_nombre || 'No asignado'}</p>
               <p>Dirección: {winnerInfo.direccion || 'No disponible'}</p>

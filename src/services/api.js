@@ -35,27 +35,6 @@ app.get("/", (req, res) => {
   return res.json("This thing works");
 });
 
-// Get prizes for a raffle
-app.get("/premios/:rifaId", (req, res) => {
-  const sql = 'SELECT premios FROM rifas WHERE id = ?';
-  db.query(sql, [req.params.rifaId], (err, data) => {
-    if (err) {
-      console.error('Error fetching prizes:', err);
-      return res.status(500).json({ error: 'Error fetching prizes', details: err.message });
-    }
-    if (data.length === 0) {
-      return res.status(404).json({ error: 'Raffle not found' });
-    }
-    try {
-      const premios = JSON.parse(data[0].premios || '{}');
-      return res.json(premios);
-    } catch (parseError) {
-      console.error('Error parsing prizes JSON:', parseError);
-      return res.status(500).json({ error: 'Error parsing prizes data', details: parseError.message });
-    }
-  });
-});
-
 // Save prizes for a raffle
 app.post("/guardarPremios", (req, res) => {
   const { rifaId, premios } = req.body;
@@ -64,22 +43,35 @@ app.post("/guardarPremios", (req, res) => {
     return res.status(400).json({ error: 'rifaId and premios are required' });
   }
 
-  const sql = 'UPDATE rifas SET premios = ? WHERE id = ?';
+  const sql = 'INSERT INTO premios (rifa_id, fecha, tipo, orden, numero_ganador, premio) VALUES ?';
+  const values = premios.map(p => [rifaId, p.fecha, p.tipo, p.orden, p.numeroGanador, p.premio]);
   
-  db.query(sql, [JSON.stringify(premios), rifaId], (err, result) => {
+  db.query(sql, [values], (err, result) => {
     if (err) {
       console.error('Error saving prizes:', err);
       return res.status(500).json({ error: 'Error saving prizes', details: err.message });
-    }
-    
-    if (result.affectedRows === 0) {
-      return res.status(404).json({ error: 'Raffle not found' });
     }
     
     return res.status(200).json({ message: 'Prizes saved successfully' });
   });
 });
 
+// Get prizes for a raffle
+app.get("/premios/:rifaId", (req, res) => {
+  const { rifaId } = req.params;
+  const sql = 'SELECT * FROM premios WHERE rifa_id = ? ORDER BY fecha, tipo, orden';
+  
+  db.query(sql, [rifaId], (err, result) => {
+    if (err) {
+      console.error('Error fetching prizes:', err);
+      return res.status(500).json({ error: 'Error fetching prizes', details: err.message });
+    }
+    
+    return res.status(200).json(result);
+  });
+});
+
+// Create a raffle
 app.post('/crearRifa', (req, res) => {
   console.log('Received request to create raffle:', req.body);
   const { nombre, organizacion_id, rangoInicio, rangoFin, crearBonos, cantidadBonos, cuotas, valorCuota, mesInicio, tiposPremios } = req.body;
@@ -112,15 +104,20 @@ app.post('/crearRifa', (req, res) => {
   });
 });
 
+// Modificación en la ruta para obtener rifas
 app.get('/rifas', (req, res) => {
   const sql = 'SELECT r.*, o.nombre as organizacion_nombre FROM rifas r LEFT JOIN organizaciones o ON r.organizacion_id = o.id';
   db.query(sql, (err, data) => {
-    if (err) return res.json(err);
+    if (err) {
+      console.error('Error fetching rifas:', err);
+      return res.status(500).json({ error: 'Error getting rifas', details: err.message });
+    }
+    console.log('Rifas found:', data.length);
     return res.json(data);
   });
 });
 
-// Get raffle numbers
+// Modificación en la ruta para obtener números de rifa
 app.get('/numerosRifa/:rifaId', (req, res) => {
   const sql = `
     SELECT nr.*, v.nombre as vendedor_nombre, c.nombre as cobrador_nombre
@@ -136,10 +133,10 @@ app.get('/numerosRifa/:rifaId', (req, res) => {
       console.error('Error getting raffle numbers:', err);
       return res.status(500).json({ error: 'Error getting raffle numbers', details: err.message });
     }
+    console.log('Raffle numbers found:', data.length);
     return res.json(data);
   });
 });
-
 // Update vendor assignment
 app.post('/actualizarVendedor', (req, res) => {
   const { numeroRifaId, vendedorId } = req.body;
@@ -191,16 +188,17 @@ app.post('/actualizarCuotaPagada', (req, res) => {
   });
 });
 
-// Get collectors by organization
+// Modificación en la ruta para obtener cobradores por organización
 app.get('/cobradoresPorOrganizacion/:organizacionId', (req, res) => {
-  console.log('Fetching collectors for organization:', req.params.organizacionId);
+  const { organizacionId } = req.params;
+  console.log('Fetching cobradores for organizacion:', organizacionId);
   const sql = 'SELECT * FROM cobradores WHERE organizacion_id = ?';
-  db.query(sql, [req.params.organizacionId], (err, data) => {
+  db.query(sql, [organizacionId], (err, data) => {
     if (err) {
-      console.error('Error fetching collectors:', err);
-      return res.status(500).json({ error: 'Error getting collectors', details: err.message });
+      console.error('Error fetching cobradores:', err);
+      return res.status(500).json({ error: 'Error getting cobradores', details: err.message });
     }
-    console.log('Collectors found:', data.length);
+    console.log('Cobradores found:', data.length);
     return res.json(data);
   });
 });
@@ -225,7 +223,7 @@ app.post('/asignarCobradorRango', (req, res) => {
   });
 });
 
-// Update collector
+// Modificación en la ruta para actualizar el cobrador
 app.post('/actualizarCobrador', (req, res) => {
   const { numeroRifaId, cobradorId } = req.body;
   console.log('Updating collector:', { numeroRifaId, cobradorId });
@@ -240,12 +238,17 @@ app.post('/actualizarCobrador', (req, res) => {
     return res.status(200).json({ message: 'Collector updated successfully', affectedRows: result.affectedRows });
   });
 });
-
-// Get vendors by organization
+// Modificación en la ruta para obtener vendedores por organización
 app.get('/vendedoresPorOrganizacion/:organizacionId', (req, res) => {
+  const { organizacionId } = req.params;
+  console.log('Fetching vendedores for organizacion:', organizacionId);
   const sql = 'SELECT * FROM vendedores WHERE organizacion_id = ?';
-  db.query(sql, [req.params.organizacionId], (err, data) => {
-    if (err) return res.json(err);
+  db.query(sql, [organizacionId], (err, data) => {
+    if (err) {
+      console.error('Error fetching vendedores:', err);
+      return res.status(500).json({ error: 'Error getting vendedores', details: err.message });
+    }
+    console.log('Vendedores found:', data.length);
     return res.json(data);
   });
 });

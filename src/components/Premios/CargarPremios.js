@@ -12,6 +12,7 @@ export default function CargarPremios() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [selectedDate, setSelectedDate] = useState(new Date());
+  const [allPremios, setAllPremios] = useState([]);
 
   useEffect(() => {
     fetchRifas();
@@ -39,6 +40,7 @@ export default function CargarPremios() {
         setTiposPremios(tiposPremiosData);
         setSelectedTipoPremio('');
         setPremios([]);
+        fetchAllPremios(); // Add this line
       } catch (error) {
         console.error('Error parsing tiposPremios:', error);
         setError('Error al procesar los tipos de premios. Por favor, verifica la configuración de la rifa.');
@@ -74,7 +76,8 @@ export default function CargarPremios() {
       const premiosConFecha = premios.map(premio => ({
         ...premio,
         fecha: selectedDate.toISOString().split('T')[0],
-        rifaId: selectedRifa.id
+        rifaId: selectedRifa.id,
+        tipo: selectedTipoPremio
       }));
       await axios.post('http://localhost:4000/guardarPremios', { 
         rifaId: selectedRifa.id,
@@ -89,6 +92,17 @@ export default function CargarPremios() {
       setError('Error al guardar los premios. Por favor, intente de nuevo.');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchAllPremios = async () => {
+    if (!selectedRifa) return;
+    try {
+      const response = await axios.get(`http://localhost:4000/premios/${selectedRifa.id}`);
+      setAllPremios(response.data);
+    } catch (error) {
+      console.error('Error al obtener premios:', error);
+      setError('Error al cargar los premios. Por favor, intente de nuevo.');
     }
   };
 
@@ -176,6 +190,33 @@ export default function CargarPremios() {
             {loading ? 'Guardando...' : 'Guardar Premios'}
           </button>
         </form>
+      )}
+      {allPremios.length > 0 && (
+        <div className="mt-8">
+          <h3 className="text-xl font-semibold mb-4">Premios Guardados</h3>
+          <table className="w-full border-collapse border border-gray-300">
+            <thead>
+              <tr className="bg-gray-100">
+                <th className="border border-gray-300 px-4 py-2">Fecha</th>
+                <th className="border border-gray-300 px-4 py-2">Tipo</th>
+                <th className="border border-gray-300 px-4 py-2">Orden</th>
+                <th className="border border-gray-300 px-4 py-2">Número Ganador</th>
+                <th className="border border-gray-300 px-4 py-2">Premio</th>
+              </tr>
+            </thead>
+            <tbody>
+              {allPremios.map((premio, index) => (
+                <tr key={index}>
+                  <td className="border border-gray-300 px-4 py-2">{premio.fecha}</td>
+                  <td className="border border-gray-300 px-4 py-2">{premio.tipo}</td>
+                  <td className="border border-gray-300 px-4 py-2">{premio.orden}</td>
+                  <td className="border border-gray-300 px-4 py-2">{premio.numeroGanador}</td>
+                  <td className="border border-gray-300 px-4 py-2">{premio.premio}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       )}
     </div>
   );
