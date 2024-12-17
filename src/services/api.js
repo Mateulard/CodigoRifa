@@ -104,6 +104,8 @@ app.post('/crearRifa', (req, res) => {
   });
 });
 
+
+
 // Modificación en la ruta para obtener rifas
 app.get('/rifas', (req, res) => {
   const sql = 'SELECT r.*, o.nombre as organizacion_nombre FROM rifas r LEFT JOIN organizaciones o ON r.organizacion_id = o.id';
@@ -238,7 +240,18 @@ app.post('/actualizarCobrador', (req, res) => {
     return res.status(200).json({ message: 'Collector updated successfully', affectedRows: result.affectedRows });
   });
 });
-// Modificación en la ruta para obtener vendedores por organización
+app.get('/rifas', (req, res) => {
+  const sql = 'SELECT r.*, o.nombre as organizacion_nombre, r.organizacion_id FROM rifas r LEFT JOIN organizaciones o ON r.organizacion_id = o.id';
+  db.query(sql, (err, data) => {
+    if (err) {
+      console.error('Error fetching rifas:', err);
+      return res.status(500).json({ error: 'Error getting rifas', details: err.message });
+    }
+    console.log('Rifas found:', data.length);
+    return res.json(data);
+  });
+});
+
 app.get('/vendedoresPorOrganizacion/:organizacionId', (req, res) => {
   const { organizacionId } = req.params;
   console.log('Fetching vendedores for organizacion:', organizacionId);
@@ -253,31 +266,20 @@ app.get('/vendedoresPorOrganizacion/:organizacionId', (req, res) => {
   });
 });
 
-// Modificar este endpoint para incluir el método de pago en la respuesta
-app.get('/numerosRifaPorCobrador/:rifaId/:cobradorId', (req, res) => {
-  const { rifaId, cobradorId } = req.params;
-  console.log(`Buscando números de rifa para la rifa ${rifaId} y cobrador ${cobradorId}`);
-
-  const sql = `
-    SELECT nr.id, nr.numero, nr.cuotas_pagadas, nr.metodo_pago, v.nombre as vendedor_nombre
-    FROM numeros_rifa nr
-    LEFT JOIN vendedores v ON nr.vendedor_id = v.id
-    WHERE nr.rifa_id = ? AND nr.cobrador_id = ?
-    ORDER BY nr.numero
-  `;
-
-  db.query(sql, [rifaId, cobradorId], (err, data) => {
+app.get('/cobradoresPorOrganizacion/:organizacionId', (req, res) => {
+  const { organizacionId } = req.params;
+  console.log('Fetching cobradores for organizacion:', organizacionId);
+  const sql = 'SELECT * FROM cobradores WHERE organizacion_id = ?';
+  db.query(sql, [organizacionId], (err, data) => {
     if (err) {
-      console.error("Error buscando números de rifa:", err);
-      return res.status(500).json({ error: 'Error del servidor', details: err.message });
+      console.error('Error fetching cobradores:', err);
+      return res.status(500).json({ error: 'Error getting cobradores', details: err.message });
     }
-    console.log("Números de rifa encontrados:", data.length);
-    if (data.length === 0) {
-      console.log("No se encontraron números de rifa para esta combinación de rifa y cobrador");
-    }
+    console.log('Cobradores found:', data.length);
     return res.json(data);
   });
 });
+ 
 
 // Calculate commission for a collector
 app.get('/calcularComisionCobrador/:rifaId/:cobradorId', (req, res) => {
@@ -708,7 +710,7 @@ app.post('/actualizarMetodoPago', (req, res) => {
 app.get('/detallesRifa/:rifaId', (req, res) => {
   const { rifaId } = req.params;
   const sql = `
-    SELECT r.*, o.nombre as organizacion_nombre FROM rifas r LEFT JOIN organizaciones o ON r.organizacion_id = o.id WHERE r.id = ?`;
+    SELECT r.*, o.nombre asorganizacion_nombre FROM rifas r LEFT JOIN organizaciones o ON r.organizacion_id = o.id WHERE r.id = ?`;
 
   db.query(sql, [rifaId], (err, result) => {
     if (err) {

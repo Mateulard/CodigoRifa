@@ -19,6 +19,7 @@ export default function ConsignarCuotas() {
   const [metodosPago, setMetodosPago] = useState({});
 
   useEffect(() => {
+    console.log('Component mounted, fetching rifas');
     fetchRifas();
     
     window.addEventListener('beforeunload', handleBeforeUnload);
@@ -30,20 +31,28 @@ export default function ConsignarCuotas() {
 
   const fetchRifas = () => {
     axios.get('http://localhost:4000/rifas').then((response) => {
+      console.log('Rifas fetched:', response.data);
       setRifas(response.data);
+    }).catch(error => {
+      console.error('Error fetching rifas:', error);
     });
   };
 
   const handleRifaSelect = (rifaId) => {
+    console.log('Selected rifa ID:', rifaId);
     const selectedRifa = rifas.find(rifa => rifa.id === parseInt(rifaId));
+    console.log('Selected rifa:', selectedRifa);
     setSelectedRifa(selectedRifa);
-    fetchNumerosRifa(selectedRifa.id);
-    fetchVendedores(selectedRifa.organizacion_id);
-    fetchCobradores(selectedRifa.organizacion_id);
+    if (selectedRifa) {
+      fetchNumerosRifa(selectedRifa.id);
+      fetchVendedores(selectedRifa.organizacion_id);
+      fetchCobradores(selectedRifa.organizacion_id);
+    }
   };
 
   const fetchNumerosRifa = (rifaId) => {
     axios.get(`http://localhost:4000/numerosRifa/${rifaId}`).then((response) => {
+      console.log('Numeros rifa fetched:', response.data);
       setNumerosRifa(response.data);
       // Initialize metodosPago state with existing data
       const initialMetodosPago = {};
@@ -51,18 +60,28 @@ export default function ConsignarCuotas() {
         initialMetodosPago[numero.id] = numero.metodo_pago || '';
       });
       setMetodosPago(initialMetodosPago);
+    }).catch(error => {
+      console.error('Error fetching numeros rifa:', error);
     });
   };
 
   const fetchVendedores = (organizacionId) => {
+    console.log('Fetching vendedores for organizacion:', organizacionId);
     axios.get(`http://localhost:4000/vendedoresPorOrganizacion/${organizacionId}`).then((response) => {
+      console.log('Vendedores fetched:', response.data);
       setVendedores(response.data);
+    }).catch(error => {
+      console.error('Error fetching vendedores:', error);
     });
   };
 
   const fetchCobradores = (organizacionId) => {
+    console.log('Fetching cobradores for organizacion:', organizacionId);
     axios.get(`http://localhost:4000/cobradoresPorOrganizacion/${organizacionId}`).then((response) => {
+      console.log('Cobradores fetched:', response.data);
       setCobradores(response.data);
+    }).catch(error => {
+      console.error('Error fetching cobradores:', error);
     });
   };
 

@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react'
 import axios from 'axios'
+import './crear-rifa.css';
 
 const meses = ['ENE', 'FEB', 'MAR', 'ABR', 'MAY', 'JUN', 'JUL', 'AGO', 'SEP', 'OCT', 'NOV', 'DIC']
 
@@ -19,7 +20,7 @@ export default function CrearRifaMultipasos() {
   const [paso, setPaso] = useState(1)
   const [formData, setFormData] = useState({
     nombre: '',
-    organizacionId: '',
+    organizacion_id: '', // Changed from organizacionId to organizacion_id
     rangoInicio: '',
     rangoFin: '',
     crearBonos: false,
@@ -78,7 +79,7 @@ export default function CrearRifaMultipasos() {
       // Reiniciar el formulario y volver al primer paso
       setFormData({
         nombre: '',
-        organizacionId: '',
+        organizacion_id: '',
         rangoInicio: '',
         rangoFin: '',
         crearBonos: false,
@@ -119,11 +120,11 @@ export default function CrearRifaMultipasos() {
         />
       </div>
       <div>
-        <label htmlFor="organizacionId">Organización</label>
+        <label htmlFor="organizacion_id">Organización</label>
         <select
-          id="organizacionId"
-          name="organizacionId"
-          value={formData.organizacionId}
+          id="organizacion_id"
+          name="organizacion_id"
+          value={formData.organizacion_id}
           onChange={handleChange}
           required
         >
