@@ -108,7 +108,7 @@ export default function CrearRifaMultipasos() {
 
   const renderPaso1 = () => (
     <div>
-      <div>
+      <div className="form-group">
         <label htmlFor="nombre">Nombre de la Rifa</label>
         <input
           type="text"
@@ -119,7 +119,8 @@ export default function CrearRifaMultipasos() {
           required
         />
       </div>
-      <div>
+  
+      <div className="form-group">
         <label htmlFor="organizacion_id">Organización</label>
         <select
           id="organizacion_id"
@@ -129,12 +130,15 @@ export default function CrearRifaMultipasos() {
           required
         >
           <option value="">Selecciona una organización</option>
-          {organizaciones.map(org => (
-            <option key={org.id} value={org.id}>{org.nombre}</option>
+          {organizaciones.map((org) => (
+            <option key={org.id} value={org.id}>
+              {org.nombre}
+            </option>
           ))}
         </select>
       </div>
-      <div>
+  
+      <div className="form-group">
         <label htmlFor="rangoInicio">Número Inicial</label>
         <input
           type="number"
@@ -145,7 +149,8 @@ export default function CrearRifaMultipasos() {
           required
         />
       </div>
-      <div>
+  
+      <div className="form-group">
         <label htmlFor="rangoFin">Número Final</label>
         <input
           type="number"
@@ -156,19 +161,21 @@ export default function CrearRifaMultipasos() {
           required
         />
       </div>
-      <div>
-        <label>
-          <input
-            type="checkbox"
-            name="crearBonos"
-            checked={formData.crearBonos}
-            onChange={handleChange}
-          />
-          Crear Bonos
-        </label>
+  
+      {/* Checkbox de Crear Bonos */}
+      <div className="form-checkbox">
+        <input
+          type="checkbox"
+          id="crearBonos"
+          name="crearBonos"
+          checked={formData.crearBonos}
+          onChange={handleChange}
+        />
+        <label htmlFor="crearBonos">Crear Bonos</label>
       </div>
+  
       {formData.crearBonos && (
-        <div>
+        <div className="form-group">
           <label htmlFor="cantidadBonos">Cantidad de Bonos</label>
           <input
             type="number"
@@ -180,7 +187,8 @@ export default function CrearRifaMultipasos() {
           />
         </div>
       )}
-      <div>
+  
+      <div className="form-group">
         <label htmlFor="cuotas">Número de Cuotas (máximo 12)</label>
         <input
           type="number"
@@ -193,7 +201,8 @@ export default function CrearRifaMultipasos() {
           required
         />
       </div>
-      <div>
+  
+      <div className="form-group">
         <label htmlFor="valorCuota">Valor de la Cuota</label>
         <input
           type="number"
@@ -204,13 +213,18 @@ export default function CrearRifaMultipasos() {
           required
         />
       </div>
-      <button type="button" onClick={siguientePaso}>Siguiente</button>
+  
+      <button className="button button-primary" type="button" onClick={siguientePaso}>
+        Siguiente
+      </button>
     </div>
-  )
+  );
+  
+  
 
   const renderPaso2 = () => (
     <div>
-      <div>
+      <div className="form-group">
         <label htmlFor="mesInicio">Mes de Inicio</label>
         <select
           id="mesInicio"
@@ -221,31 +235,44 @@ export default function CrearRifaMultipasos() {
         >
           <option value="">Selecciona un mes</option>
           {meses.map((mes, index) => (
-            <option key={index} value={index}>{mes}</option>
+            <option key={index} value={index}>
+              {mes}
+            </option>
           ))}
         </select>
       </div>
-      <button type="button" onClick={pasoAnterior}>Anterior</button>
-      <button type="button" onClick={siguientePaso}>Siguiente</button>
+  
+      <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+        <button className="button button-secondary" type="button" onClick={pasoAnterior}>
+          Anterior
+        </button>
+        <button className="button button-primary" type="button" onClick={siguientePaso}>
+          Siguiente
+        </button>
+      </div>
     </div>
-  )
+  );
+  
 
   const renderPaso3 = () => (
     <div>
-      <div>
+      <div className="form-group">
         <p>Tipos de Premios</p>
         {tiposPremios.map((tipo) => (
-          <div key={tipo.value}>
-            <label>
-              <input
-                type="checkbox"
-                checked={formData.tiposPremios[tipo.value] > 0}
-                onChange={(e) => handleTipoPremioChange(tipo.value, e.target.checked ? 1 : 0)}
-              />
-              {tipo.label}
-            </label>
+          <div key={tipo.value} className="form-checkbox">
+            {/* Checkbox con diseño personalizado */}
+            <input
+              type="checkbox"
+              id={tipo.value}
+              checked={formData.tiposPremios[tipo.value] > 0}
+              onChange={(e) => handleTipoPremioChange(tipo.value, e.target.checked ? 1 : 0)}
+            />
+            <label htmlFor={tipo.value}>{tipo.label}</label>
+  
+            {/* Campo numérico */}
             {formData.tiposPremios[tipo.value] > 0 && (
               <input
+                className="form-input"
                 type="number"
                 value={formData.tiposPremios[tipo.value]}
                 onChange={(e) => handleTipoPremioChange(tipo.value, e.target.value)}
@@ -256,23 +283,73 @@ export default function CrearRifaMultipasos() {
           </div>
         ))}
       </div>
-      <button type="button" onClick={pasoAnterior}>Anterior</button>
-      <button type="submit" disabled={isLoading}>
-        {isLoading ? 'Creando...' : 'Crear Rifa'}
-      </button>
+  
+      <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+        <button className="button button-secondary" type="button" onClick={pasoAnterior}>
+          Anterior
+        </button>
+        <button className="button button-primary" type="submit" disabled={isLoading}>
+          {isLoading ? 'Creando...' : 'Crear Rifa'}
+        </button>
+      </div>
     </div>
-  )
+  );
+  
+  
+  
 
   return (
-    <div style={{ maxWidth: '600px', margin: '0 auto', padding: '20px' }}>
+    <div className="crear-rifa-container">
       <h1 style={{ fontSize: '24px', marginBottom: '20px' }}>Crear Nueva Rifa</h1>
-      {message && <div style={{ backgroundColor: '#e6ffe6', border: '1px solid #4CAF50', color: '#4CAF50', padding: '10px', marginBottom: '20px' }}>{message}</div>}
-      {error && <div style={{ backgroundColor: '#ffebee', border: '1px solid #f44336', color: '#f44336', padding: '10px', marginBottom: '20px' }}>{error}</div>}
+      {message && (
+        <div
+          style={{
+            backgroundColor: '#e6ffe6',
+            border: '1px solid #4CAF50',
+            color: '#4CAF50',
+            padding: '10px',
+            marginBottom: '20px',
+          }}
+        >
+          {message}
+        </div>
+      )}
+      {error && (
+        <div
+          style={{
+            backgroundColor: '#ffebee',
+            border: '1px solid #f44336',
+            color: '#f44336',
+            padding: '10px',
+            marginBottom: '20px',
+          }}
+        >
+          {error}
+        </div>
+      )}
       <div style={{ marginBottom: '20px' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-          <div style={{ height: '4px', width: '32%', backgroundColor: paso >= 1 ? '#2196F3' : '#e0e0e0' }}></div>
-          <div style={{ height: '4px', width: '32%', backgroundColor: paso >= 2 ? '#2196F3' : '#e0e0e0' }}></div>
-          <div style={{ height: '4px', width: '32%', backgroundColor: paso >= 3 ? '#2196F3' : '#e0e0e0' }}></div>
+          <div
+            style={{
+              height: '4px',
+              width: '32%',
+              backgroundColor: paso >= 1 ? '#2196F3' : '#e0e0e0',
+            }}
+          ></div>
+          <div
+            style={{
+              height: '4px',
+              width: '32%',
+              backgroundColor: paso >= 2 ? '#2196F3' : '#e0e0e0',
+            }}
+          ></div>
+          <div
+            style={{
+              height: '4px',
+              width: '32%',
+              backgroundColor: paso >= 3 ? '#2196F3' : '#e0e0e0',
+            }}
+          ></div>
         </div>
       </div>
       <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
@@ -281,6 +358,6 @@ export default function CrearRifaMultipasos() {
         {paso === 3 && renderPaso3()}
       </form>
     </div>
-  )
+  );
 }
 

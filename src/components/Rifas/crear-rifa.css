@@ -1,0 +1,91 @@
+/* Contenedor principal */
+.crear-rifa-container {
+  max-width: 600px;
+  margin: 20px auto;
+  padding: 20px;
+  background-color: #ffffff;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  font-family: 'Poppins', sans-serif;
+  color: #000000;
+}
+
+/* Etiquetas de los campos */
+.form-group {
+  margin-bottom: 20px; /* Espacio entre cada grupo */
+}
+
+.form-group label {
+  display: block; /* Para que las etiquetas estén en su propia línea */
+  margin-bottom: 8px; /* Espacio entre la etiqueta y el campo */
+  font-weight: bold;
+  color: #333; /* Texto oscuro */
+}
+
+/* Inputs y selects */
+.form-group input,
+.form-group select {
+  width: 100%; /* Ancho completo */
+  padding: 10px; /* Espaciado interno */
+  font-size: 14px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  color: #000000;
+  background-color: #ffffff;
+  box-sizing: border-box;
+  transition: border-color 0.3s ease;
+}
+
+.form-group input:focus,
+.form-group select:focus {
+  border-color: #5e60ce; /* Color primario en foco */
+  box-shadow: 0 0 8px rgba(94, 96, 206, 0.5);
+  outline: none;
+}
+
+/* Contenedor del checkbox y la etiqueta */
+.form-checkbox {
+  display: flex; /* Coloca los elementos en una fila */
+  align-items: center; /* Alinea verticalmente el checkbox y la etiqueta */
+  gap: 10px; /* Espacio entre el checkbox y el texto */
+  margin-bottom: 15px; /* Espaciado entre cada checkbox */
+}
+
+/* Ocultamos el checkbox original */
+.form-checkbox input[type="checkbox"] {
+  display: none; /* Esconde el checkbox nativo */
+}
+
+/* Estilo del nuevo checkbox */
+.form-checkbox input[type="checkbox"] + label::before {
+  content: ""; /* Caja simulada */
+  display: inline-block;
+  width: 20px;
+  height: 20px;
+  border: 2px solid #5e60ce; /* Borde del checkbox */
+  border-radius: 4px; /* Bordes redondeados */
+  background-color: #ffffff; /* Fondo blanco */
+  margin-right: 5px; /* Espacio entre la caja y el texto */
+  transition: background-color 0.3s ease, transform 0.3s ease;
+}
+
+/* Estado marcado */
+.form-checkbox input[type="checkbox"]:checked + label::before {
+  background-color: #5e60ce; /* Fondo azul cuando está marcado */
+  border-color: #5e60ce;
+  transform: scale(1.1); /* Efecto visual al marcar */
+}
+
+/* Texto de la etiqueta */
+.form-checkbox label {
+  color: #333; /* Texto oscuro */
+  font-size: 14px;
+  cursor: pointer; /* Hacer clic en la etiqueta selecciona el checkbox */
+}
+
+
+
+
+
+

@@ -1,0 +1,161 @@
+/* Estilo general de la página */
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 2rem;
+    background-color: #f9f9f9; /* Fondo suave */
+    border-radius: 8px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); /* Sombra suave */
+  }
+  
+  /* Título principal */
+  h1 {
+    font-size: 2.5rem;
+    font-weight: 700;
+    color: #333;
+    margin-bottom: 2rem;
+    text-align: center;
+  }
+  
+  /* Estilo de las pestañas */
+  .nav-tabs {
+    border-bottom: 2px solid #5e60ce;
+  }
+  
+  .nav-tabs .nav-link {
+    border: none;
+    color: #5e60ce;
+    font-weight: 600;
+    padding: 10px 20px;
+    text-align: center;
+    border-radius: 8px;
+  }
+  
+  .nav-tabs .nav-link.active {
+    color: #fff;
+    background-color: #5e60ce;
+    border-color: #5e60ce;
+  }
+  
+  .nav-tabs .nav-link:hover {
+    background-color: #d1d9ff;
+  }
+  
+  /* Estilos para las tablas dentro de ConsignarCuotas */
+  .table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 2rem;
+  }
+  
+  .table th, .table td {
+    padding: 12px 15px;
+    border: 1px solid #ddd;
+    text-align: center;
+  }
+  
+  .table th {
+    background-color: #f0f0f0;
+    font-weight: 600;
+  }
+  
+  .table td {
+    background-color: #fff;
+  }
+  
+  .table td button {
+    margin-right: 5px;
+  }
+  
+  /* Botones de acción (Estado de cuota) */
+  .btn-sm {
+    font-size: 12px;
+    padding: 5px 10px;
+  }
+  
+  .btn-success {
+    background-color: #4CAF50;
+    border: none;
+    color: white;
+  }
+  
+  .btn-danger {
+    background-color: #f44336;
+    border: none;
+    color: white;
+  }
+  
+  .btn-primary {
+    background-color: #2196F3;
+    border: none;
+    color: white;
+  }
+  
+  .btn-outline-secondary {
+    background-color: transparent;
+    border: 1px solid #ddd;
+    color: #5e60ce;
+  }
+  
+  /* Estilos para los selects dentro de la tabla */
+  .select-methodo-pago {
+    width: 100%;
+    padding: 5px;
+    border-radius: 5px;
+    border: 1px solid #ccc;
+  }
+  
+  /* Mensajes de éxito o error */
+  .alert-info {
+    background-color: #d1ecf1;
+    color: #0c5460;
+    border-color: #bee5eb;
+    padding: 15px;
+    border-radius: 4px;
+    margin-top: 20px;
+  }
+  
+  .alert-error {
+    background-color: #f8d7da;
+    color: #721c24;
+    border-color: #f5c6cb;
+    padding: 15px;
+    border-radius: 4px;
+    margin-top: 20px;
+  }
+  
+  /* Personalización de los selects en el formulario */
+  .form-control {
+    padding: 10px;
+    border-radius: 5px;
+    border: 1px solid #ddd;
+    margin-bottom: 15px;
+  }
+  
+  .select-methodo-pago {
+    width: 100%;
+    padding: 8px;
+    border-radius: 5px;
+    border: 1px solid #ccc;
+    background-color: #fff;
+  }
+  
+  /* Estilo para los botones dentro de las pestañas */
+  button {
+    padding: 10px 20px;
+    font-size: 14px;
+    color: #fff;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+  }
+  
+  button:hover {
+    opacity: 0.9;
+  }
+  
+  button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+  

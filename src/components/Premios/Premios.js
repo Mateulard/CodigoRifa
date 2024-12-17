@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import CargarPremios from './CargarPremios';
 import RegistroPremios from './RegistroPremios';
-
+import "./Premios.css"
 export default function Premios() {
   const [activeTab, setActiveTab] = useState('cargar');
 
